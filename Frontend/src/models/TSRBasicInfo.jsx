@@ -45,7 +45,9 @@ export default function TSRBasicInfo({
           >
             {[
               "ICICI Bank",
-              "HDFC Bank",
+              "IHFC Bank",
+              "AHFC Bank",
+              "Bajaj Finance"
             ].map((a) => (
               <option key={a}>{a}</option>
             ))}
