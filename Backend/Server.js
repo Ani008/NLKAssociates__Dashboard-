@@ -8,22 +8,8 @@ dotenv.config();
 // ROUTES
 const authRoutes = require("./routes/authRoutes");
 const connectDB = require("./config/db");
-const caseRoutes = require('./routes/caseRoutes');
-const dashboardRoutes = require('./routes/dashboardRoutes');
-const documentRoutes = require('./routes/documentRoutes');
-const tsrRoutes = require('./routes/tsrRoutes');
 const tsrInitiationRoutes = require('./routes/tsrInitiationRoutes');
-const tsrOtherProvisionRoutes = require("./routes/tsrOtherProvisionRoutes");
-const tsrTitleFlowRoutes = require("./routes/tsrTitleFlowRoutes");
-const tsrWaitingReportRoutes = require("./routes/tsrWaitingReportRoutes");
-const approvalRoutes = require('./routes/approvalRoutes');
-const tsrDocumentListRoutes = require("./routes/tsrDocumentList");
-const tsrTitleEvidenceRoutes = require("./routes/tsrTitleEvidenceRoutes");
-const tsrUploadedChecklistRoutes = require("./routes/tsrUploadedChecklistRoutes");
-
 const masterDBRoutes = require("./routes/masterDBRoutes");
-
-const tsrDraftRoutes = require("./routes/tsrDraftRoutes");
 const path = require('path');
 const fs = require('fs');
 
@@ -54,20 +40,8 @@ app.get("/", (req, res) => {
 
 // API ROUTES
 app.use("/api/auth", authRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/cases', caseRoutes);
-app.use('/api/documents', documentRoutes);
-app.use('/api/tsr', tsrRoutes);
 app.use('/api/tsr-initiation', tsrInitiationRoutes);
-app.use('/api/approvals', approvalRoutes);
-app.use("/api/tsr-other-provisions",tsrOtherProvisionRoutes);
-app.use("/api/tsr-title-flow",tsrTitleFlowRoutes);
-app.use("/api/tsr-waiting-report", tsrWaitingReportRoutes);
-app.use("/api/tsr-document-list", tsrDocumentListRoutes);
-app.use("/api/tsr-title-evidence",tsrTitleEvidenceRoutes);
-app.use("/api/tsr-uploaded-checklist", tsrUploadedChecklistRoutes);
 
-app.use("/api/tsr-draft", tsrDraftRoutes);
 app.use("/api/masterdb", masterDBRoutes);
 
 

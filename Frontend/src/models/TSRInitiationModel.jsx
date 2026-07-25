@@ -9,10 +9,15 @@ const textareaStyle = {
   fontFamily: "inherit",
 };
 
-export default function TSRInitiationModel({
-  form,
-  handleChange,
-}) {
+const FIELDS = [
+  { name: "part1Desc", label: "Description 1" },
+  { name: "part2Desc", label: "Description 2" },
+  { name: "part3Desc", label: "Description 3" },
+  { name: "part4Desc", label: "Description 4" },
+  { name: "part5Desc", label: "Description 5" },
+];
+
+export default function TSRInitiationModel({ form, handleChange }) {
   return (
     <div
       className="animate-in"
@@ -23,7 +28,6 @@ export default function TSRInitiationModel({
       }}
     >
       {/* Heading */}
-
       <div>
         <h2
           style={{
@@ -47,85 +51,18 @@ export default function TSRInitiationModel({
         </p>
       </div>
 
-      {/* Description 1 */}
-
-      <div>
-        <label style={lbl}>
-          Description 1
-        </label>
-
-        <textarea
-          name="description1"
-          value={form.description1}
-          onChange={handleChange}
-          placeholder="Enter Description 1..."
-          style={textareaStyle}
-        />
-      </div>
-
-      {/* Description 2 */}
-
-      <div>
-        <label style={lbl}>
-          Description 2
-        </label>
-
-        <textarea
-          name="description2"
-          value={form.description2}
-          onChange={handleChange}
-          placeholder="Enter Description 2..."
-          style={textareaStyle}
-        />
-      </div>
-
-      {/* Description 3 */}
-
-      <div>
-        <label style={lbl}>
-          Description 3
-        </label>
-
-        <textarea
-          name="description3"
-          value={form.description3}
-          onChange={handleChange}
-          placeholder="Enter Description 3..."
-          style={textareaStyle}
-        />
-      </div>
-
-      {/* Description 4 */}
-
-      <div>
-        <label style={lbl}>
-          Description 4
-        </label>
-
-        <textarea
-          name="description4"
-          value={form.description4}
-          onChange={handleChange}
-          placeholder="Enter Description 4..."
-          style={textareaStyle}
-        />
-      </div>
-
-      {/* Description 5 */}
-
-      <div>
-        <label style={lbl}>
-          Description 5
-        </label>
-
-        <textarea
-          name="description5"
-          value={form.description5}
-          onChange={handleChange}
-          placeholder="Enter Description 5..."
-          style={textareaStyle}
-        />
-      </div>
+      {FIELDS.map((f) => (
+        <div key={f.name}>
+          <label style={lbl}>{f.label}</label>
+          <textarea
+            name={f.name}
+            value={form[f.name]}
+            onChange={handleChange}
+            placeholder={`Enter ${f.label}...`}
+            style={textareaStyle}
+          />
+        </div>
+      ))}
     </div>
   );
 }

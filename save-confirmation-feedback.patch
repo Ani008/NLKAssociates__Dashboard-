@@ -1,0 +1,133 @@
+diff --git a/Frontend/src/pages/NonLitigation/BusinessLegal/TSRInitiation.jsx b/Frontend/src/pages/NonLitigation/BusinessLegal/TSRInitiation.jsx
+index 76b2181..3ce6e63 100644
+--- a/Frontend/src/pages/NonLitigation/BusinessLegal/TSRInitiation.jsx
++++ b/Frontend/src/pages/NonLitigation/BusinessLegal/TSRInitiation.jsx
+@@ -53,6 +53,7 @@ export default function TSRInitiation() {
+   const [editingRecordId, setEditingRecordId] = useState(null);
+   const [submitting, setSubmitting] = useState(false);
+   const [toast, setToast] = useState(null); // { type: 'success' | 'error', message }
++  const [saveFeedback, setSaveFeedback] = useState(null); // 'progress' | 'final' | null — which button just succeeded
+ 
+   // ---------- Records table ----------
+   const [records, setRecords] = useState([]);
+@@ -66,7 +67,7 @@ export default function TSRInitiation() {
+ 
+   const showToast = (message, type = "success") => {
+     setToast({ type, message });
+-    setTimeout(() => setToast(null), 3500);
++    setTimeout(() => setToast(null), 4200);
+   };
+ 
+   // ---------- FETCH RECORDS ----------
+@@ -191,14 +192,20 @@ export default function TSRInitiation() {
+       setBasicInfo((prev) => ({ ...prev, refNo: saved.refNo || "" }));
+       fetchRecords();
+ 
++      // Flash "✓ Saved!" directly on the button the user clicked — this is
++      // the feedback that's hardest to miss, since it appears right under
++      // their cursor, not just in a corner toast.
++      setSaveFeedback(isFinal ? "final" : "progress");
++      setTimeout(() => setSaveFeedback(null), 2000);
++
+       if (isFinal) {
+-        showToast(`TSR Initiation saved successfully. Ref No: ${saved.refNo || "—"}`);
++        showToast(`✅ TSR Initiation saved successfully. Ref No: ${saved.refNo || "—"}`);
+       } else {
+-        showToast("Progress saved.");
++        showToast("✅ Progress saved successfully.");
+       }
+     } catch (error) {
+       console.error(error);
+-      showToast(error.response?.data?.message || "Failed to save. Please try again.", "error");
++      showToast(error.response?.data?.message || "⚠️ Failed to save. Please try again.", "error");
+     } finally {
+       setSubmitting(false);
+     }
+@@ -261,10 +268,10 @@ export default function TSRInitiation() {
+       if (viewingRecord?._id === id) setViewingRecord(null);
+ 
+       await fetchRecords();
+-      showToast("Record deleted.");
++      showToast("✅ Record deleted.");
+     } catch (error) {
+       console.error(error);
+-      showToast(error.response?.data?.message || "Failed to delete record.", "error");
++      showToast(error.response?.data?.message || "⚠️ Failed to delete record.", "error");
+     } finally {
+       setDeletingId(null);
+     }
+@@ -289,16 +296,28 @@ export default function TSRInitiation() {
+             zIndex: 99999,
+             background: toast.type === "success" ? "#000000" : "#dc2626",
+             color: "white",
+-            padding: "12px 20px",
+-            borderRadius: 8,
+-            fontSize: 13,
+-            fontWeight: 600,
+-            boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
++            padding: "16px 24px",
++            borderRadius: 10,
++            fontSize: 14,
++            fontWeight: 700,
++            boxShadow: "0 12px 30px rgba(0,0,0,0.3)",
++            display: "flex",
++            alignItems: "center",
++            gap: 10,
++            minWidth: 260,
++            animation: "tsr-toast-in 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
++            borderLeft: `4px solid ${toast.type === "success" ? "#22c55e" : "#fca5a5"}`,
+           }}
+         >
+           {toast.message}
+         </div>
+       )}
++      <style>{`
++        @keyframes tsr-toast-in {
++          from { transform: translateX(40px); opacity: 0; }
++          to { transform: translateX(0); opacity: 1; }
++        }
++      `}</style>
+ 
+       {/* ================= HEADER ================= */}
+ 
+@@ -475,8 +494,8 @@ export default function TSRInitiation() {
+                 disabled={submitting}
+                 onClick={() => handleSave({ isFinal: false })}
+                 style={{
+-                  background: "white",
+-                  color: "#059669",
++                  background: saveFeedback === "progress" ? "#059669" : "white",
++                  color: saveFeedback === "progress" ? "white" : "#059669",
+                   border: "1px solid #059669",
+                   borderRadius: 8,
+                   padding: "12px 24px",
+@@ -486,7 +505,7 @@ export default function TSRInitiation() {
+                   opacity: submitting ? 0.6 : 1,
+                 }}
+               >
+-                {submitting ? "Saving..." : "Save Progress"}
++                {submitting ? "Saving..." : saveFeedback === "progress" ? "✓ Saved!" : "Save Progress"}
+               </button>
+ 
+               {activeTab === "basic" ? (
+@@ -512,7 +531,7 @@ export default function TSRInitiation() {
+                     disabled={submitting}
+                     onClick={() => handleSave({ isFinal: true })}
+                     style={{
+-                      background: "var(--black)",
++                      background: saveFeedback === "final" ? "#059669" : "var(--black)",
+                       color: "white",
+                       border: "none",
+                       borderRadius: 8,
+@@ -520,9 +539,10 @@ export default function TSRInitiation() {
+                       fontWeight: 700,
+                       cursor: submitting ? "not-allowed" : "pointer",
+                       opacity: submitting ? 0.6 : 1,
++                      transition: ".2s",
+                     }}
+                   >
+-                    {submitting ? "Saving..." : "Save TSR Initiation"}
++                    {submitting ? "Saving..." : saveFeedback === "final" ? "✓ Saved!" : "Save TSR Initiation"}
+                   </button>
+ 
+                   <button

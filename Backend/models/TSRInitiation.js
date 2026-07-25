@@ -1,138 +1,49 @@
 const mongoose = require("mongoose");
 
+// The 4 supported banks. Ref No prefix is derived from this list (see
+// controllers/tsrInitiationController.js -> BANK_CODE_MAP). Keep this list
+// and BANK_CODE_MAP in sync if a bank is ever added/renamed.
+const SUPPORTED_BANKS = ["ICICI Bank", "IHFC Bank", "AHFC Bank", "Bajaj Finance"];
+
 const TSRInitiationSchema = new mongoose.Schema(
   {
-    // Basic Info
+    // ---------- Basic Info ----------
     author: { type: String, default: "" },
-    appId: { type: String, default: "" },
-    refNo: { type: String, default: "" },
-    branch: { type: String, default: "Main" },
-    initiationDate: { type: String, default: "" },
+    bank: { type: String, enum: [...SUPPORTED_BANKS, ""], default: "" },
 
-    // Applicant Details
+    // Auto-generated server-side from `bank` (e.g. "ICICI01"). Never set
+    // directly by the client — see createTSRInitiation/updateTSRInitiation.
+    refNo: { type: String, default: "", index: true },
+
+    appId: { type: String, default: "" },
     applicant: { type: String, default: "" },
     coApplicant: { type: String, default: "" },
-    existingOwner: { type: String, default: "" },
-
-    // Transaction Details
     transactionType: { type: String, default: "" },
-    bankBranch: { type: String, default: "" },
-
-    // Property Details
-    municipalPropertyNo: { type: String, default: "" },
-    rccConstructionArea: { type: String, default: "" },
+    branchOffice: { type: String, default: "" },
     village: { type: String, default: "" },
-    taluka: { type: String, default: "" },
+    propertyNo: { type: String, default: "" },
     district: { type: String, default: "" },
-    municipalCouncil: { type: String, default: "" },
-    landParcels: [
+
+    // ---------- Bulk Files (drag & drop) ----------
+    bulkFiles: [
       {
-        surveyNo: {
-          type: String,
-          default: "",
-        },
-
-        hissaNo: {
-          type: String,
-          default: "",
-        },
-
-        area: {
-          type: String,
-          default: "",
-        },
-
-        unit: {
-          type: String,
-          enum: ["", "Sq. Mtr", "Sq. Ft", "Are", "Hectare", "Acre", "Guntha"],
-          default: "",
-        },
-
-        remarks: {
-          type: String,
-          default: "",
-        },
-      },
-    ],
-    entireLandDescription: { type: String, default: "" },
-    subjectPropertyDescription: { type: String, default: "" },
-
-    // Boundaries
-    boundaryEast: { type: String, default: "" },
-    boundaryWest: { type: String, default: "" },
-    boundarySouth: { type: String, default: "" },
-    boundaryNorth: { type: String, default: "" },
-
-    // Contact
-    executiveMobile: { type: String, default: "" },
-    executiveEmail: { type: String, default: "" },
-
-    // Status
-    status: {
-      type: String,
-      enum: ["initiated", "in_progress", "completed", "cancelled"],
-      default: "initiated",
-    },
-
-    documentList: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "TSRDocumentList",
-      default: null,
-    },
-
-    titleFlowId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "TSRTitleFlow",
-      default: null,
-    },
-
-    titleEvidenceId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "TSRTitleEvidence",
-      default: null,
-    },
-
-    otherProvisionId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "TSROtherProvision",
-      default: null,
-    },
-
-    waitingReportId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "TSRWaitingReport",
-      default: null,
-    },
-
-    // Section 1.5 - Uploaded Documents Checklist (now its own linked collection)
-    uploadedChecklistId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "TSRUploadedChecklist",
-      default: null,
-    },
-
-    // Uploaded documents tracking
-    uploadedDocuments: [
-      {
-        originalName: String,
-        filePath: String,
-        fileSize: Number,
-        extractedFields: [String], // which fields were extracted from this doc
+        originalName: { type: String, default: "" },
+        filePath: { type: String, default: "" },
+        fileSize: { type: Number, default: 0 },
+        mimeType: { type: String, default: "" },
         uploadedAt: { type: Date, default: Date.now },
       },
     ],
 
-    // Part 1.5 Uploaded Documents Checklist (New Section)
-    uploadedChecklist: [
-      {
-        name: { type: String, default: "" },
-        fileName: { type: String, default: "" },
-        filePath: { type: String, default: "" },
-        remarks: { type: String, default: "" },
-      },
-    ],
+    // ---------- TSR Initiation — 5 large description fields ----------
+    part1Desc: { type: String, default: "" },
+    part2Desc: { type: String, default: "" },
+    part3Desc: { type: String, default: "" },
+    part4Desc: { type: String, default: "" },
+    part5Desc: { type: String, default: "" },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 module.exports = mongoose.model("TSRInitiation", TSRInitiationSchema);
+module.exports.SUPPORTED_BANKS = SUPPORTED_BANKS;
