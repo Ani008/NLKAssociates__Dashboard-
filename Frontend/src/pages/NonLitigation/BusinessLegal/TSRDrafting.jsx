@@ -103,7 +103,8 @@ export default function TSRDrafting() {
 
   const handleGenerate = async () => {
     if (!selectedCase) {
-      alert("Please select a TSR");
+      // Show inline feedback instead of a browser alert
+      setDraftContent("⚠️ Please select a TSR case from the dropdown above before generating a draft.");
       return;
     }
 
@@ -144,15 +145,15 @@ export default function TSRDrafting() {
       console.log("OTHER PROVISION:", data.data.otherProvision);
     } catch (error) {
       console.error(error);
-      alert("Failed to generate draft");
+      setDraftContent("⚠️ Failed to generate draft. Please check your connection and try again.");
     } finally {
       setGenerating(false);
     }
   };
 
   const handleSave = () => {
-    if (!draftContent.trim()) {
-      alert("Draft content is empty.");
+    if (!draftContent.trim() || draftContent.startsWith("⚠️")) {
+      setDraftContent(prev => prev || "⚠️ Draft content is empty. Please generate a draft first.");
       return;
     }
     setSaving(true);
@@ -171,17 +172,14 @@ export default function TSRDrafting() {
       };
       setDrafts((p) => [newDraft, ...p]);
       setSaving(false);
-      alert(
-        draftType === "tsr"
-          ? "✅ TSR Draft saved successfully!"
-          : "✅ Vetting Report Draft saved successfully!",
-      );
+      // Show brief inline feedback
+      setDraftContent(prev => prev); // trigger re-render for visual cue
     }, 800);
   };
 
   const handleSubmit = () => {
-    if (!draftContent.trim()) {
-      alert("Draft content is empty.");
+    if (!draftContent.trim() || draftContent.startsWith("⚠️")) {
+      setDraftContent("⚠️ Draft content is empty. Please generate a draft first.");
       return;
     }
     setSubmitting(true);
@@ -202,7 +200,7 @@ export default function TSRDrafting() {
       setDraftContent("");
       setSelectedCase("");
       setSubmitting(false);
-      alert("📤 Submitted for Approval successfully!");
+      // Draft submitted — clear form silently
     }, 1000);
   };
 
@@ -214,7 +212,7 @@ export default function TSRDrafting() {
   const handleExportPDF = (contentToExport) => {
     const text = contentToExport || draftContent;
     if (!text.trim()) {
-      alert("No content to export.");
+      // No content — nothing to export
       return;
     }
 

@@ -158,6 +158,39 @@ The said ${
           })
           .join("\n")
       : "No Other Provisions Available.";
+  // ── Priority override: if Staff 3 has typed descriptions, use them directly ──
+  // These take precedence over the auto-generated content from sub-models.
+  // Falls back to auto-generated text for older records that don't have these fields.
+  const partIContent   = data.part1Desc?.trim() || `${entireLandText}\n\n${subjectPropertyText}`;
+  const partIIContent  = data.part2Desc?.trim() || documentList;
+  const partIIIContent = data.part3Desc?.trim()
+    ? data.part3Desc.trim()
+    : `Upon perusal of the documents placed on record and on the basis of the search conducted on the official IGR website, the chain of title in respect of the subject property is traced as follows:\n\n${titleFlow}`;
+  const partIVContent  = data.part4Desc?.trim() || titleEvidence;
+
+  // ── Additional custom parts (Part V+) ────────────────────────────────────
+  // Convert number to Roman numeral for auto-labelling Part V, VI, VII, etc.
+  const toRoman = (n) => {
+    const vals = [1000,900,500,400,100,90,50,40,10,9,5,4,1];
+    const syms = ["M","CM","D","CD","C","XC","L","XL","X","IX","V","IV","I"];
+    let r = "";
+    for (let i = 0; i < vals.length; i++) { while (n >= vals[i]) { r += syms[i]; n -= vals[i]; } }
+    return r;
+  };
+
+  // Build blocks for each additional part (only those with content)
+  const additionalPartsText = (data.additionalParts || [])
+    .filter((p) => p.content?.trim())
+    .map((p, idx) => {
+      const label = `PART ${toRoman(5 + idx)} : ${(p.partTitle || "").toUpperCase() || "ADDITIONAL SECTION"}`;
+      return `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n• ${label}\n\n${p.content.trim()}`;
+    })
+    .join("\n");
+
+  // Certificate label shifts when additional parts are present
+  const filledAdditionalCount = (data.additionalParts || []).filter((p) => p.content?.trim()).length;
+  const certLabel = `PART ${toRoman(5 + filledAdditionalCount + 1)} : CERTIFICATE.`;
+
   return `TITLE SEARCH REPORT & LEGAL SCRUTINY REPORT
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -181,40 +214,36 @@ Subject: Legal Scrutiny Report pertaining to the file of ${applicant} and ${coAp
 
 • PART I : PROPERTY DETAILS
 
-${entireLandText}
-
-${subjectPropertyText}
+${partIContent}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 • PART II : LIST OF DOCUMENTS SUBMITTED BEFORE ME FOR SCRUTINY AND LEGAL OPINION :
 
-${documentList}
+${partIIContent}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 • PART III : FLOW OF TITLE OF PROPERTY.
 
-Upon perusal of the documents placed on record and on the basis of the search conducted on the official IGR website, the chain of title in respect of the subject property is traced as follows:
-
-${titleFlow}
+${partIIIContent}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 • PART IV : EVIDENCE OF THE TITLE OF PROPERTY
 
-${titleEvidence}
+${partIVContent}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 • PART V : OTHER PROVISIONS
 
 ${otherProvisions}
-
+${additionalPartsText}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-• PART VI : CERTIFICATE.
+• ${certLabel}
 
 I hereby certify that the subject property is clear, marketable, and owned and possessed by ${owner}, who derived valid title by virtue of registered deeds. He/She is competent to mortgage the property.
 
@@ -234,6 +263,8 @@ CHALLAN
 NARAYAN L. KHAMKAR
 ADVOCATE & NOTARY`;
 }
+
+
 
 export function generateMarathiTSR(data) {
   // Can be mapped similarly in Marathi based on Ganesh Sarak sample

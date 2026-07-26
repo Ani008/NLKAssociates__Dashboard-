@@ -35,12 +35,27 @@ const TSRInitiationSchema = new mongoose.Schema(
       },
     ],
 
-    // ---------- TSR Initiation — 5 large description fields ----------
+    // ---------- TSR Initiation — 4 legal description fields ----------
+    // Staff 3 fills these. Each maps directly to one Part in the final PDF:
+    //   part1Desc → PART I  : Property Details
+    //   part2Desc → PART II : List of Documents Scrutinised
+    //   part3Desc → PART III: Flow of Title / Chain of Ownership
+    //   part4Desc → PART IV : Evidence of Title
     part1Desc: { type: String, default: "" },
     part2Desc: { type: String, default: "" },
     part3Desc: { type: String, default: "" },
     part4Desc: { type: String, default: "" },
-    part5Desc: { type: String, default: "" },
+
+    // ---------- Additional Custom Parts (Part V, VI, VII …) ----------
+    // Staff 3 can add unlimited extra parts beyond the standard 4.
+    // Each part appears as its own section in the final generated PDF.
+    additionalParts: [
+      {
+        partLabel: { type: String, default: "" }, // e.g. "PART V", "PART VI"
+        partTitle: { type: String, default: "" }, // e.g. "Certificate", "Search Report"
+        content:   { type: String, default: "" }, // the actual legal text
+      },
+    ],
   },
   { timestamps: true }
 );

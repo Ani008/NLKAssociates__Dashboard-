@@ -24,15 +24,14 @@ const INITIAL_INITIATION = {
   part2Desc: "",
   part3Desc: "",
   part4Desc: "",
-  part5Desc: "",
 };
 
+// These labels appear in the View Details modal to identify each part clearly.
 const PART_LABELS = {
-  part1Desc: "Description 1",
-  part2Desc: "Description 2",
-  part3Desc: "Description 3",
-  part4Desc: "Description 4",
-  part5Desc: "Description 5",
+  part1Desc: "PART I — Property Details",
+  part2Desc: "PART II — List of Documents Scrutinised",
+  part3Desc: "PART III — Flow of Title / Chain of Ownership",
+  part4Desc: "PART IV — Evidence of Title",
 };
 
 function formatFileSize(bytes) {
@@ -47,6 +46,8 @@ export default function TSRInitiation() {
   const [basicInfo, setBasicInfo] = useState({ ...INITIAL_BASIC });
   const [initiationData, setInitiationData] = useState({ ...INITIAL_INITIATION });
   const [bulkFiles, setBulkFiles] = useState([]);
+  // Additional custom parts (Part V, VI, VII…) added dynamically by Staff 3
+  const [additionalParts, setAdditionalParts] = useState([]); // [{ partTitle, content }]
   const [uploadProgress, setUploadProgress] = useState(null); // { percent, status }
   const [refNoLoading, setRefNoLoading] = useState(false);
 
@@ -173,7 +174,7 @@ export default function TSRInitiation() {
   const handleSave = async ({ isFinal } = {}) => {
     setSubmitting(true);
     try {
-      const payload = { ...basicInfo, ...initiationData, bulkFiles };
+      const payload = { ...basicInfo, ...initiationData, bulkFiles, additionalParts };
       delete payload.refNo; // server-generated — never send it back
 
       let response;
@@ -216,6 +217,7 @@ export default function TSRInitiation() {
     setBasicInfo({ ...INITIAL_BASIC });
     setInitiationData({ ...INITIAL_INITIATION });
     setBulkFiles([]);
+    setAdditionalParts([]);
     setEditingRecordId(null);
     setActiveTab("basic");
     showToast("Entry discarded.");
@@ -243,9 +245,15 @@ export default function TSRInitiation() {
       part2Desc: record.part2Desc || "",
       part3Desc: record.part3Desc || "",
       part4Desc: record.part4Desc || "",
-      part5Desc: record.part5Desc || "",
     });
     setBulkFiles(record.bulkFiles || []);
+    // Load additional custom parts if this record has any
+    setAdditionalParts(
+      (record.additionalParts || []).map((p) => ({
+        partTitle: p.partTitle || "",
+        content:   p.content   || "",
+      }))
+    );
     setEditingRecordId(record._id);
     setActiveTab("basic");
     setViewingRecord(null);
@@ -263,6 +271,7 @@ export default function TSRInitiation() {
         setBasicInfo({ ...INITIAL_BASIC });
         setInitiationData({ ...INITIAL_INITIATION });
         setBulkFiles([]);
+        setAdditionalParts([]);
         setEditingRecordId(null);
       }
       if (viewingRecord?._id === id) setViewingRecord(null);
@@ -395,7 +404,7 @@ export default function TSRInitiation() {
             },
             {
               key: "initiation",
-              label: "II. TSR Initiation",
+              label: "II. Legal Descriptions (Part I–IV)",
             },
           ].map((tab) => (
             <button
@@ -448,6 +457,21 @@ export default function TSRInitiation() {
             <TSRInitiationModel
               form={initiationData}
               handleChange={handleInitiationChange}
+              additionalParts={additionalParts}
+              onAddPart={() =>
+                setAdditionalParts((prev) => [
+                  ...prev,
+                  { partTitle: "", content: "" },
+                ])
+              }
+              onUpdatePart={(index, field, value) =>
+                setAdditionalParts((prev) =>
+                  prev.map((p, i) => (i === index ? { ...p, [field]: value } : p))
+                )
+              }
+              onRemovePart={(index) =>
+                setAdditionalParts((prev) => prev.filter((_, i) => i !== index))
+              }
             />
           )}
           {/* ================= BOTTOM BUTTONS ================= */}
@@ -790,7 +814,7 @@ export default function TSRInitiation() {
                 {/* TSR Initiation descriptions */}
                 <div>
                   <h3 style={{ borderBottom: "2px solid #f1f5f9", paddingBottom: 8, color: "var(--black)", margin: "0 0 16px 0", fontSize: 15, fontWeight: 700 }}>
-                    TSR Initiation
+                    Legal Descriptions — Part I to IV
                   </h3>
                   <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                     {Object.keys(PART_LABELS).map((key) =>
@@ -808,6 +832,27 @@ export default function TSRInitiation() {
                     )}
                   </div>
                 </div>
+
+                {/* Additional custom parts (Part V, VI, VII…) */}
+                {(viewingRecord.additionalParts || []).length > 0 && (
+                  <div>
+                    <h3 style={{ borderBottom: "2px solid #f1f5f9", paddingBottom: 8, color: "var(--black)", margin: "0 0 16px 0", fontSize: 15, fontWeight: 700 }}>
+                      Additional Parts
+                    </h3>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                      {viewingRecord.additionalParts.map((part, idx) => (
+                        <div key={idx} style={{ fontSize: 13, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: "12px 16px" }}>
+                          <strong style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5, color: "#475569" }}>
+                            Part {["V","VI","VII","VIII","IX","X"][idx] || (idx + 5)} — {part.partTitle || "Untitled"}
+                          </strong>
+                          <div style={{ color: "#475569", marginTop: 6, whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
+                            {part.content || <span style={{ color: "#94a3b8", fontStyle: "italic" }}>No content.</span>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Documents */}
                 <div>
