@@ -8,6 +8,16 @@ function formatCurrentDate() {
   return `${d.getDate().toString().padStart(2, "0")}.${(d.getMonth() + 1).toString().padStart(2, "0")}.${d.getFullYear()}`;
 }
 
+function formatBankName(bankRaw) {
+  if (!bankRaw || !bankRaw.trim()) return "[Bank Name]";
+  const b = bankRaw.trim();
+  if (/icici/i.test(b)) return "ICICI Home Finance Co. Ltd.";
+  if (/ihfc/i.test(b)) return "IHFC Home Finance Co. Ltd.";
+  if (/ahfc/i.test(b)) return "AHFC Home Finance Co. Ltd.";
+  if (/bajaj/i.test(b)) return "Bajaj Housing Finance Ltd.";
+  return b;
+}
+
 export function generateEnglishTSR(data) {
   const refNo = data.refNo || "[Reference Number]";
   const appId = data.appId || "[Application Number]";
@@ -19,7 +29,8 @@ export function generateEnglishTSR(data) {
   const coApplicant = data.coApplicant || "[Co-Applicant Name]";
   const owner = data.existingOwner || "[Existing Owner Name]";
   const transactionType = data.transactionType || "[Transaction Type]";
-  const bankBranch = data.bankBranch || "[Bank Branch]";
+  const bankBranch = data.branchOffice || data.bankBranch || "[Bank Branch]";
+  const bankName = formatBankName(data.bank);
 
   const village = data.village || "[Village]";
   const taluka = data.taluka || "[Taluka]";
@@ -205,7 +216,7 @@ Existing Owner      : ${owner}
 
 To,
 The Branch Manager,
-ICICI Home Finance Co. Ltd.,
+${bankName},
 ${bankBranch}.
 
 Subject: Legal Scrutiny Report pertaining to the file of ${applicant} and ${coApplicant}.
@@ -287,7 +298,8 @@ export function generateEnglishWaitingReport(data) {
   const coApplicant = data.coApplicant || "[Co-Applicant Name]";
   const owner = data.existingOwner || "[Existing Owner Name]";
   const transactionType = data.transactionType || "[Transaction Type]";
-  const bankBranch = data.bankBranch || "[Bank Branch]";
+  const bankBranch = data.branchOffice || data.bankBranch || "[Bank Branch]";
+  const bankName = formatBankName(data.bank);
 
   const village = data.village || "[Village]";
   const taluka = data.taluka || "[Taluka]";
@@ -333,7 +345,7 @@ Existing Owner      : ${owner}
 
 To,
 The Branch Manager,
-ICICI Home Finance Co. Ltd.,
+${bankName},
 ${bankBranch}.
 
 Subject: Scrutiny Waiting Report pertaining to pending documents of ${applicant} & ${coApplicant}.
