@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 
-import API, { BACKEND_URL } from "../../../api/axios";
+import API from "../../../api/axios";
 import TSRBasicInfo from "../../../models/TSRBasicInfo";
 import TSRInitiationModel from "../../../models/TSRInitiationModel";
 
@@ -44,7 +44,9 @@ export default function TSRInitiation() {
   const [activeTab, setActiveTab] = useState("basic");
 
   const [basicInfo, setBasicInfo] = useState({ ...INITIAL_BASIC });
-  const [initiationData, setInitiationData] = useState({ ...INITIAL_INITIATION });
+  const [initiationData, setInitiationData] = useState({
+    ...INITIAL_INITIATION,
+  });
   const [bulkFiles, setBulkFiles] = useState([]);
   // Additional custom parts (Part V, VI, VII…) added dynamically by Staff 3
   const [additionalParts, setAdditionalParts] = useState([]); // [{ partTitle, content }]
@@ -79,7 +81,9 @@ export default function TSRInitiation() {
   const fetchRecords = async () => {
     setLoadingRecords(true);
     try {
-      const { data } = await API.get("/tsr-initiation/list", { headers: authHeader() });
+      const { data } = await API.get("/tsr-initiation/list", {
+        headers: authHeader(),
+      });
       setRecords(data.data || []);
     } catch (err) {
       console.error("Failed to fetch records", err);
@@ -105,9 +109,17 @@ export default function TSRInitiation() {
     try {
       let response;
       if (editingRecordId) {
-        response = await API.put(`/tsr-initiation/${editingRecordId}`, { bank }, { headers: authHeader() });
+        response = await API.put(
+          `/tsr-initiation/${editingRecordId}`,
+          { bank },
+          { headers: authHeader() },
+        );
       } else {
-        response = await API.post("/tsr-initiation/create", { bank }, { headers: authHeader() });
+        response = await API.post(
+          "/tsr-initiation/create",
+          { bank },
+          { headers: authHeader() },
+        );
       }
       const saved = response.data.data;
       setEditingRecordId(saved._id);
@@ -115,7 +127,10 @@ export default function TSRInitiation() {
       fetchRecords(); // a real record now exists (or was updated) — keep the table in sync
     } catch (error) {
       console.error(error);
-      showToast(error.response?.data?.message || "Failed to generate Ref No.", "error");
+      showToast(
+        error.response?.data?.message || "Failed to generate Ref No.",
+        "error",
+      );
     } finally {
       setRefNoLoading(false);
     }
@@ -151,11 +166,16 @@ export default function TSRInitiation() {
 
       if (response.data.success) {
         setBulkFiles((prev) => [...prev, ...response.data.files]);
-        showToast(`${response.data.files.length} file(s) uploaded successfully.`);
+        showToast(
+          `${response.data.files.length} file(s) uploaded successfully.`,
+        );
       }
     } catch (error) {
       console.error(error);
-      showToast(error.response?.data?.message || "File upload failed.", "error");
+      showToast(
+        error.response?.data?.message || "File upload failed.",
+        "error",
+      );
     } finally {
       setUploadProgress(null);
     }
@@ -167,7 +187,10 @@ export default function TSRInitiation() {
 
   const handleViewDocument = (filePath) => {
     if (!filePath) return;
-    window.open(`${BACKEND_URL}/${filePath}`, "_blank", "noopener,noreferrer");
+
+    const cleanPath = filePath.startsWith("/") ? filePath : `/${filePath}`;
+
+    window.open(cleanPath, "_blank", "noopener,noreferrer");
   };
 
   // ---------- SAVE (shared by "Save Progress" and "Save TSR Initiation") ----------
@@ -179,9 +202,13 @@ export default function TSRInitiation() {
 
       let response;
       if (editingRecordId) {
-        response = await API.put(`/tsr-initiation/${editingRecordId}`, payload, {
-          headers: authHeader(),
-        });
+        response = await API.put(
+          `/tsr-initiation/${editingRecordId}`,
+          payload,
+          {
+            headers: authHeader(),
+          },
+        );
       } else {
         response = await API.post("/tsr-initiation/create", payload, {
           headers: authHeader(),
@@ -200,20 +227,30 @@ export default function TSRInitiation() {
       setTimeout(() => setSaveFeedback(null), 2000);
 
       if (isFinal) {
-        showToast(`✅ TSR Initiation saved successfully. Ref No: ${saved.refNo || "—"}`);
+        showToast(
+          `✅ TSR Initiation saved successfully. Ref No: ${saved.refNo || "—"}`,
+        );
       } else {
         showToast("✅ Progress saved successfully.");
       }
     } catch (error) {
       console.error(error);
-      showToast(error.response?.data?.message || "⚠️ Failed to save. Please try again.", "error");
+      showToast(
+        error.response?.data?.message || "⚠️ Failed to save. Please try again.",
+        "error",
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleCancelUpload = () => {
-    if (!window.confirm("Discard this entry and start over? Unsaved changes will be lost.")) return;
+    if (
+      !window.confirm(
+        "Discard this entry and start over? Unsaved changes will be lost.",
+      )
+    )
+      return;
     setBasicInfo({ ...INITIAL_BASIC });
     setInitiationData({ ...INITIAL_INITIATION });
     setBulkFiles([]);
@@ -258,11 +295,18 @@ export default function TSRInitiation() {
     setActiveTab("basic");
     setViewingRecord(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
-    showToast("Record loaded — edit and Save Progress / Save TSR Initiation to update it.");
+    showToast(
+      "Record loaded — edit and Save Progress / Save TSR Initiation to update it.",
+    );
   };
 
   const handleDeleteRecord = async (id) => {
-    if (!window.confirm("Delete this TSR Initiation record permanently? This cannot be undone.")) return;
+    if (
+      !window.confirm(
+        "Delete this TSR Initiation record permanently? This cannot be undone.",
+      )
+    )
+      return;
     setDeletingId(id);
     try {
       await API.delete(`/tsr-initiation/${id}`, { headers: authHeader() });
@@ -280,7 +324,10 @@ export default function TSRInitiation() {
       showToast("✅ Record deleted.");
     } catch (error) {
       console.error(error);
-      showToast(error.response?.data?.message || "⚠️ Failed to delete record.", "error");
+      showToast(
+        error.response?.data?.message || "⚠️ Failed to delete record.",
+        "error",
+      );
     } finally {
       setDeletingId(null);
     }
@@ -529,7 +576,11 @@ export default function TSRInitiation() {
                   opacity: submitting ? 0.6 : 1,
                 }}
               >
-                {submitting ? "Saving..." : saveFeedback === "progress" ? "✓ Saved!" : "Save Progress"}
+                {submitting
+                  ? "Saving..."
+                  : saveFeedback === "progress"
+                    ? "✓ Saved!"
+                    : "Save Progress"}
               </button>
 
               {activeTab === "basic" ? (
@@ -555,7 +606,8 @@ export default function TSRInitiation() {
                     disabled={submitting}
                     onClick={() => handleSave({ isFinal: true })}
                     style={{
-                      background: saveFeedback === "final" ? "#059669" : "var(--black)",
+                      background:
+                        saveFeedback === "final" ? "#059669" : "var(--black)",
                       color: "white",
                       border: "none",
                       borderRadius: 8,
@@ -566,7 +618,11 @@ export default function TSRInitiation() {
                       transition: ".2s",
                     }}
                   >
-                    {submitting ? "Saving..." : saveFeedback === "final" ? "✓ Saved!" : "Save TSR Initiation"}
+                    {submitting
+                      ? "Saving..."
+                      : saveFeedback === "final"
+                        ? "✓ Saved!"
+                        : "Save TSR Initiation"}
                   </button>
 
                   <button
@@ -610,50 +666,135 @@ export default function TSRInitiation() {
             alignItems: "center",
           }}
         >
-          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "var(--black)" }}>
+          <h2
+            style={{
+              margin: 0,
+              fontSize: 18,
+              fontWeight: 700,
+              color: "var(--black)",
+            }}
+          >
             TSR Initiation Records
           </h2>
-          <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>
+          <span
+            style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}
+          >
             {records.length} record{records.length !== 1 ? "s" : ""}
           </span>
         </div>
 
         {loadingRecords ? (
-          <div style={{ padding: 40, textAlign: "center", color: "var(--muted)" }}>Loading records…</div>
+          <div
+            style={{ padding: 40, textAlign: "center", color: "var(--muted)" }}
+          >
+            Loading records…
+          </div>
         ) : records.length === 0 ? (
-          <div style={{ padding: 40, textAlign: "center", color: "var(--muted)" }}>
-            No TSR Initiation records yet. Fill the form above and click Save Progress or Save TSR Initiation.
+          <div
+            style={{ padding: 40, textAlign: "center", color: "var(--muted)" }}
+          >
+            No TSR Initiation records yet. Fill the form above and click Save
+            Progress or Save TSR Initiation.
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                fontSize: 13,
+              }}
+            >
               <thead>
-                <tr style={{ background: "#fafafa", borderBottom: "1px solid var(--border)" }}>
-                  <th style={{ padding: "12px 20px", textAlign: "left", fontWeight: 700, color: "var(--muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                <tr
+                  style={{
+                    background: "#fafafa",
+                    borderBottom: "1px solid var(--border)",
+                  }}
+                >
+                  <th
+                    style={{
+                      padding: "12px 20px",
+                      textAlign: "left",
+                      fontWeight: 700,
+                      color: "var(--muted)",
+                      fontSize: 11,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
+                    }}
+                  >
                     Application ID
                   </th>
-                  <th style={{ padding: "12px 20px", textAlign: "left", fontWeight: 700, color: "var(--muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  <th
+                    style={{
+                      padding: "12px 20px",
+                      textAlign: "left",
+                      fontWeight: 700,
+                      color: "var(--muted)",
+                      fontSize: 11,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
+                    }}
+                  >
                     Applicant Name
                   </th>
-                  <th style={{ padding: "12px 20px", textAlign: "left", fontWeight: 700, color: "var(--muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  <th
+                    style={{
+                      padding: "12px 20px",
+                      textAlign: "left",
+                      fontWeight: 700,
+                      color: "var(--muted)",
+                      fontSize: 11,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
+                    }}
+                  >
                     Transaction Type
                   </th>
-                  <th style={{ padding: "12px 20px", textAlign: "center", fontWeight: 700, color: "var(--muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, width: 260 }}>
+                  <th
+                    style={{
+                      padding: "12px 20px",
+                      textAlign: "center",
+                      fontWeight: 700,
+                      color: "var(--muted)",
+                      fontSize: 11,
+                      textTransform: "uppercase",
+                      letterSpacing: 0.5,
+                      width: 260,
+                    }}
+                  >
                     Actions
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {records.map((record) => (
-                  <tr key={record._id} style={{ borderBottom: "1px solid var(--border)" }}>
-                    <td style={{ padding: "14px 20px", fontWeight: 600, color: "var(--black)" }}>
-                      {record.appId || <span style={{ color: "#cbd5e1", fontWeight: 400 }}>—</span>}
+                  <tr
+                    key={record._id}
+                    style={{ borderBottom: "1px solid var(--border)" }}
+                  >
+                    <td
+                      style={{
+                        padding: "14px 20px",
+                        fontWeight: 600,
+                        color: "var(--black)",
+                      }}
+                    >
+                      {record.appId || (
+                        <span style={{ color: "#cbd5e1", fontWeight: 400 }}>
+                          —
+                        </span>
+                      )}
                     </td>
                     <td style={{ padding: "14px 20px", color: "var(--black)" }}>
-                      {record.applicant || <span style={{ color: "#cbd5e1" }}>—</span>}
+                      {record.applicant || (
+                        <span style={{ color: "#cbd5e1" }}>—</span>
+                      )}
                     </td>
                     <td style={{ padding: "14px 20px", color: "var(--black)" }}>
-                      {record.transactionType || <span style={{ color: "#cbd5e1" }}>—</span>}
+                      {record.transactionType || (
+                        <span style={{ color: "#cbd5e1" }}>—</span>
+                      )}
                     </td>
                     <td style={{ padding: "14px 20px", textAlign: "center" }}>
                       <div style={{ display: "inline-flex", gap: 6 }}>
@@ -699,13 +840,18 @@ export default function TSRInitiation() {
                             border: "1px solid #fecaca",
                             padding: "6px 12px",
                             borderRadius: 6,
-                            cursor: deletingId === record._id ? "not-allowed" : "pointer",
+                            cursor:
+                              deletingId === record._id
+                                ? "not-allowed"
+                                : "pointer",
                             fontSize: 11,
                             fontWeight: 600,
                             opacity: deletingId === record._id ? 0.6 : 1,
                           }}
                         >
-                          {deletingId === record._id ? "Deleting…" : "🗑 Delete"}
+                          {deletingId === record._id
+                            ? "Deleting…"
+                            : "🗑 Delete"}
                         </button>
                       </div>
                     </td>
@@ -743,7 +889,8 @@ export default function TSRInitiation() {
               style={{
                 background: "white",
                 borderRadius: 16,
-                boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)",
+                boxShadow:
+                  "0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)",
                 width: "100%",
                 maxWidth: 820,
                 maxHeight: "85vh",
@@ -768,7 +915,8 @@ export default function TSRInitiation() {
                     {viewingRecord.applicant || "TSR Initiation Record"}
                   </h2>
                   <span style={{ fontSize: 12, opacity: 0.8 }}>
-                    Ref No: {viewingRecord.refNo || "—"} · Application ID: {viewingRecord.appId || "—"}
+                    Ref No: {viewingRecord.refNo || "—"} · Application ID:{" "}
+                    {viewingRecord.appId || "—"}
                   </span>
                 </div>
                 <button
@@ -790,79 +938,187 @@ export default function TSRInitiation() {
               </div>
 
               {/* Body */}
-              <div style={{ padding: 28, overflowY: "auto", display: "flex", flexDirection: "column", gap: 28 }}>
+              <div
+                style={{
+                  padding: 28,
+                  overflowY: "auto",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 28,
+                }}
+              >
                 {/* Basic Info */}
                 <div>
-                  <h3 style={{ borderBottom: "2px solid #f1f5f9", paddingBottom: 8, color: "var(--black)", margin: "0 0 16px 0", fontSize: 15, fontWeight: 700 }}>
+                  <h3
+                    style={{
+                      borderBottom: "2px solid #f1f5f9",
+                      paddingBottom: 8,
+                      color: "var(--black)",
+                      margin: "0 0 16px 0",
+                      fontSize: 15,
+                      fontWeight: 700,
+                    }}
+                  >
                     Basic Info
                   </h3>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "14px 24px", fontSize: 13 }}>
-                    <div><strong>Author:</strong> <span style={{ color: "#475569" }}>{viewingRecord.author || "—"}</span></div>
-                    <div><strong>Bank:</strong> <span style={{ color: "#475569" }}>{viewingRecord.bank || "—"}</span></div>
-                    <div><strong>Ref No:</strong> <span style={{ color: "#475569" }}>{viewingRecord.refNo || "—"}</span></div>
-                    <div><strong>Application ID:</strong> <span style={{ color: "#475569" }}>{viewingRecord.appId || "—"}</span></div>
-                    <div><strong>Applicant:</strong> <span style={{ color: "#475569" }}>{viewingRecord.applicant || "—"}</span></div>
-                    <div><strong>Co-Applicant:</strong> <span style={{ color: "#475569" }}>{viewingRecord.coApplicant || "—"}</span></div>
-                    <div><strong>Transaction Type:</strong> <span style={{ color: "#475569" }}>{viewingRecord.transactionType || "—"}</span></div>
-                    <div><strong>Branch Office:</strong> <span style={{ color: "#475569" }}>{viewingRecord.branchOffice || "—"}</span></div>
-                    <div><strong>Village:</strong> <span style={{ color: "#475569" }}>{viewingRecord.village || "—"}</span></div>
-                    <div><strong>Property No:</strong> <span style={{ color: "#475569" }}>{viewingRecord.propertyNo || "—"}</span></div>
-                    <div><strong>District:</strong> <span style={{ color: "#475569" }}>{viewingRecord.district || "—"}</span></div>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr 1fr",
+                      gap: "14px 24px",
+                      fontSize: 13,
+                    }}
+                  >
+                    <div>
+                      <strong>Author:</strong>{" "}
+                      <span style={{ color: "#475569" }}>
+                        {viewingRecord.author || "—"}
+                      </span>
+                    </div>
+                    <div>
+                      <strong>Bank:</strong>{" "}
+                      <span style={{ color: "#475569" }}>
+                        {viewingRecord.bank || "—"}
+                      </span>
+                    </div>
+                    <div>
+                      <strong>Ref No:</strong>{" "}
+                      <span style={{ color: "#475569" }}>
+                        {viewingRecord.refNo || "—"}
+                      </span>
+                    </div>
+                    <div>
+                      <strong>Application ID:</strong>{" "}
+                      <span style={{ color: "#475569" }}>
+                        {viewingRecord.appId || "—"}
+                      </span>
+                    </div>
+                    <div>
+                      <strong>Applicant:</strong>{" "}
+                      <span style={{ color: "#475569" }}>
+                        {viewingRecord.applicant || "—"}
+                      </span>
+                    </div>
+                    <div>
+                      <strong>Co-Applicant:</strong>{" "}
+                      <span style={{ color: "#475569" }}>
+                        {viewingRecord.coApplicant || "—"}
+                      </span>
+                    </div>
+                    <div>
+                      <strong>Transaction Type:</strong>{" "}
+                      <span style={{ color: "#475569" }}>
+                        {viewingRecord.transactionType || "—"}
+                      </span>
+                    </div>
+                    <div>
+                      <strong>Branch Office:</strong>{" "}
+                      <span style={{ color: "#475569" }}>
+                        {viewingRecord.branchOffice || "—"}
+                      </span>
+                    </div>
+                    <div>
+                      <strong>Village:</strong>{" "}
+                      <span style={{ color: "#475569" }}>
+                        {viewingRecord.village || "—"}
+                      </span>
+                    </div>
+                    <div>
+                      <strong>Property No:</strong>{" "}
+                      <span style={{ color: "#475569" }}>
+                        {viewingRecord.propertyNo || "—"}
+                      </span>
+                    </div>
+                    <div>
+                      <strong>District:</strong>{" "}
+                      <span style={{ color: "#475569" }}>
+                        {viewingRecord.district || "—"}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
                 {/* TSR Initiation descriptions */}
                 <div>
-                  <h3 style={{ borderBottom: "2px solid #f1f5f9", paddingBottom: 8, color: "var(--black)", margin: "0 0 16px 0", fontSize: 15, fontWeight: 700 }}>
-                    Legal Descriptions — Part I to IV
+                  <h3
+                    style={{
+                      borderBottom: "2px solid #f1f5f9",
+                      paddingBottom: 8,
+                      color: "var(--black)",
+                      margin: "0 0 16px 0",
+                      fontSize: 15,
+                      fontWeight: 700,
+                    }}
+                  >
+                    TSR Initiation
                   </h3>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 14,
+                    }}
+                  >
                     {Object.keys(PART_LABELS).map((key) =>
                       viewingRecord[key] ? (
                         <div key={key} style={{ fontSize: 13 }}>
                           <strong>{PART_LABELS[key]}:</strong>
-                          <div style={{ color: "#475569", marginTop: 4, whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
+                          <div
+                            style={{
+                              color: "#475569",
+                              marginTop: 4,
+                              whiteSpace: "pre-wrap",
+                              lineHeight: 1.6,
+                            }}
+                          >
                             {viewingRecord[key]}
                           </div>
                         </div>
-                      ) : null
+                      ) : null,
                     )}
-                    {Object.keys(PART_LABELS).every((key) => !viewingRecord[key]) && (
-                      <span style={{ color: "#94a3b8", fontSize: 13, fontStyle: "italic" }}>No description entered.</span>
+                    {Object.keys(PART_LABELS).every(
+                      (key) => !viewingRecord[key],
+                    ) && (
+                      <span
+                        style={{
+                          color: "#94a3b8",
+                          fontSize: 13,
+                          fontStyle: "italic",
+                        }}
+                      >
+                        No description entered.
+                      </span>
                     )}
                   </div>
                 </div>
 
-                {/* Additional custom parts (Part V, VI, VII…) */}
-                {(viewingRecord.additionalParts || []).length > 0 && (
-                  <div>
-                    <h3 style={{ borderBottom: "2px solid #f1f5f9", paddingBottom: 8, color: "var(--black)", margin: "0 0 16px 0", fontSize: 15, fontWeight: 700 }}>
-                      Additional Parts
-                    </h3>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                      {viewingRecord.additionalParts.map((part, idx) => (
-                        <div key={idx} style={{ fontSize: 13, background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: "12px 16px" }}>
-                          <strong style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5, color: "#475569" }}>
-                            Part {["V","VI","VII","VIII","IX","X"][idx] || (idx + 5)} — {part.partTitle || "Untitled"}
-                          </strong>
-                          <div style={{ color: "#475569", marginTop: 6, whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
-                            {part.content || <span style={{ color: "#94a3b8", fontStyle: "italic" }}>No content.</span>}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
                 {/* Documents */}
                 <div>
-                  <h3 style={{ borderBottom: "2px solid #f1f5f9", paddingBottom: 8, color: "var(--black)", margin: "0 0 16px 0", fontSize: 15, fontWeight: 700 }}>
-                    Uploaded Documents ({(viewingRecord.bulkFiles || []).length})
+                  <h3
+                    style={{
+                      borderBottom: "2px solid #f1f5f9",
+                      paddingBottom: 8,
+                      color: "var(--black)",
+                      margin: "0 0 16px 0",
+                      fontSize: 15,
+                      fontWeight: 700,
+                    }}
+                  >
+                    Uploaded Documents ({(viewingRecord.bulkFiles || []).length}
+                    )
                   </h3>
                   {(viewingRecord.bulkFiles || []).length === 0 ? (
-                    <div style={{ color: "var(--muted)", fontSize: 13 }}>No documents uploaded.</div>
+                    <div style={{ color: "var(--muted)", fontSize: 13 }}>
+                      No documents uploaded.
+                    </div>
                   ) : (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 8,
+                      }}
+                    >
                       {viewingRecord.bulkFiles.map((f, idx) => (
                         <div
                           key={idx}
@@ -876,8 +1132,24 @@ export default function TSRInitiation() {
                             padding: "10px 14px",
                           }}
                         >
-                          <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                            <span style={{ color: "#64748b", fontSize: 12, width: 20, flexShrink: 0 }}>{idx + 1}.</span>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 10,
+                              minWidth: 0,
+                            }}
+                          >
+                            <span
+                              style={{
+                                color: "#64748b",
+                                fontSize: 12,
+                                width: 20,
+                                flexShrink: 0,
+                              }}
+                            >
+                              {idx + 1}.
+                            </span>
                             <span style={{ fontSize: 16 }}>📎</span>
                             <span
                               style={{
@@ -892,7 +1164,13 @@ export default function TSRInitiation() {
                             >
                               {f.originalName}
                             </span>
-                            <span style={{ fontSize: 11, color: "var(--muted)", flexShrink: 0 }}>
+                            <span
+                              style={{
+                                fontSize: 11,
+                                color: "var(--muted)",
+                                flexShrink: 0,
+                              }}
+                            >
                               {formatFileSize(f.fileSize)}
                             </span>
                           </div>
@@ -921,7 +1199,16 @@ export default function TSRInitiation() {
               </div>
 
               {/* Footer */}
-              <div style={{ padding: "16px 28px", borderTop: "1px solid #f1f5f9", display: "flex", justifyContent: "flex-end", gap: 10, background: "#fafafa" }}>
+              <div
+                style={{
+                  padding: "16px 28px",
+                  borderTop: "1px solid #f1f5f9",
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: 10,
+                  background: "#fafafa",
+                }}
+              >
                 <button
                   onClick={() => handleEditRecord(viewingRecord)}
                   style={{
@@ -955,7 +1242,7 @@ export default function TSRInitiation() {
               </div>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
     </div>
   );

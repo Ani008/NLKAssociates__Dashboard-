@@ -37,7 +37,7 @@ function Login() {
       localStorage.setItem("role", res.data.user.role);
 
       // REDIRECT
-      navigate("/dashboard");
+      navigate("/");
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
     } finally {
