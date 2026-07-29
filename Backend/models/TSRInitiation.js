@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 // The 4 supported banks. Ref No prefix is derived from this list (see
 // controllers/tsrInitiationController.js -> BANK_CODE_MAP). Keep this list
 // and BANK_CODE_MAP in sync if a bank is ever added/renamed.
-const SUPPORTED_BANKS = ["ICICI Bank", "IHFC Bank", "AHFC Bank", "Bajaj Finance"];
+const SUPPORTED_BANKS = ["ICICI Bank", "IHFC", "Aditya Birla Finance", "Bajaj Finance"];
 
 const TSRInitiationSchema = new mongoose.Schema(
   {

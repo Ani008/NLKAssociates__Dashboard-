@@ -8,8 +8,8 @@ const { SUPPORTED_BANKS } = TSRInitiation;
 // models/TSRInitiation.js -> SUPPORTED_BANKS.
 const BANK_CODE_MAP = {
   "ICICI Bank": "ICICI",
-  "IHFC Bank": "IHFC",
-  "AHFC Bank": "AHFC",
+  "IHFC": "IHFC",
+  "Aditya Birla Finance": "ABFL",
   "Bajaj Finance": "BAJAJ",
 };
 

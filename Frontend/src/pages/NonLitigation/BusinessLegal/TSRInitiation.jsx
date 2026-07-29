@@ -26,13 +26,16 @@ const INITIAL_INITIATION = {
   part4Desc: "",
 };
 
-// These labels appear in the View Details modal to identify each part clearly.
+// These labels appear in the View Details modal to identify each description box clearly.
 const PART_LABELS = {
-  part1Desc: "PART I — Property Details",
-  part2Desc: "PART II — List of Documents Scrutinised",
-  part3Desc: "PART III — Flow of Title / Chain of Ownership",
-  part4Desc: "PART IV — Evidence of Title",
+  part1Desc: "Description 1",
+  part2Desc: "Description 2",
+  part3Desc: "Description 3",
+  part4Desc: "Description 4",
 };
+
+// Default shape for the 5th (additional) description box — no title/hint, plain content only.
+const DEFAULT_ADDITIONAL_PARTS = [{ partTitle: "", content: "" }];
 
 function formatFileSize(bytes) {
   if (!bytes) return "0 KB";
@@ -48,8 +51,11 @@ export default function TSRInitiation() {
     ...INITIAL_INITIATION,
   });
   const [bulkFiles, setBulkFiles] = useState([]);
-  // Additional custom parts (Part V, VI, VII…) added dynamically by Staff 3
-  const [additionalParts, setAdditionalParts] = useState([]); // [{ partTitle, content }]
+  // 5th description box (stored the same way as before — [{ partTitle, content }] —
+  // so the drafting logic needs no changes at all), always present, not add/removable.
+  const [additionalParts, setAdditionalParts] = useState([
+    ...DEFAULT_ADDITIONAL_PARTS,
+  ]);
   const [uploadProgress, setUploadProgress] = useState(null); // { percent, status }
   const [refNoLoading, setRefNoLoading] = useState(false);
 
@@ -193,6 +199,19 @@ export default function TSRInitiation() {
     window.open(cleanPath, "_blank", "noopener,noreferrer");
   };
 
+  const handleDownloadDocument = (filePath, originalName) => {
+    if (!filePath) return;
+
+    const cleanPath = filePath.startsWith("/") ? filePath : `/${filePath}`;
+
+    const link = document.createElement("a");
+    link.href = cleanPath;
+    link.download = originalName || "";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // ---------- SAVE (shared by "Save Progress" and "Save TSR Initiation") ----------
   const handleSave = async ({ isFinal } = {}) => {
     setSubmitting(true);
@@ -254,7 +273,7 @@ export default function TSRInitiation() {
     setBasicInfo({ ...INITIAL_BASIC });
     setInitiationData({ ...INITIAL_INITIATION });
     setBulkFiles([]);
-    setAdditionalParts([]);
+    setAdditionalParts([...DEFAULT_ADDITIONAL_PARTS]);
     setEditingRecordId(null);
     setActiveTab("basic");
     showToast("Entry discarded.");
@@ -284,12 +303,16 @@ export default function TSRInitiation() {
       part4Desc: record.part4Desc || "",
     });
     setBulkFiles(record.bulkFiles || []);
-    // Load additional custom parts if this record has any
+    // Load the 5th description box's saved content (fall back to an empty
+    // default so older records without it still show a plain, empty box).
+    const loadedAdditionalParts = (record.additionalParts || []).map((p) => ({
+      partTitle: p.partTitle || "",
+      content: p.content || "",
+    }));
     setAdditionalParts(
-      (record.additionalParts || []).map((p) => ({
-        partTitle: p.partTitle || "",
-        content:   p.content   || "",
-      }))
+      loadedAdditionalParts.length > 0
+        ? loadedAdditionalParts
+        : [...DEFAULT_ADDITIONAL_PARTS],
     );
     setEditingRecordId(record._id);
     setActiveTab("basic");
@@ -315,7 +338,7 @@ export default function TSRInitiation() {
         setBasicInfo({ ...INITIAL_BASIC });
         setInitiationData({ ...INITIAL_INITIATION });
         setBulkFiles([]);
-        setAdditionalParts([]);
+        setAdditionalParts([...DEFAULT_ADDITIONAL_PARTS]);
         setEditingRecordId(null);
       }
       if (viewingRecord?._id === id) setViewingRecord(null);
@@ -451,7 +474,7 @@ export default function TSRInitiation() {
             },
             {
               key: "initiation",
-              label: "II. Legal Descriptions (Part I–IV)",
+              label: "II. TSR Initiation",
             },
           ].map((tab) => (
             <button
@@ -505,19 +528,10 @@ export default function TSRInitiation() {
               form={initiationData}
               handleChange={handleInitiationChange}
               additionalParts={additionalParts}
-              onAddPart={() =>
-                setAdditionalParts((prev) => [
-                  ...prev,
-                  { partTitle: "", content: "" },
-                ])
-              }
               onUpdatePart={(index, field, value) =>
                 setAdditionalParts((prev) =>
                   prev.map((p, i) => (i === index ? { ...p, [field]: value } : p))
                 )
-              }
-              onRemovePart={(index) =>
-                setAdditionalParts((prev) => prev.filter((_, i) => i !== index))
               }
             />
           )}
@@ -1076,9 +1090,25 @@ export default function TSRInitiation() {
                         </div>
                       ) : null,
                     )}
+                    {viewingRecord.additionalParts?.[0]?.content ? (
+                      <div style={{ fontSize: 13 }}>
+                        <strong>Description 5:</strong>
+                        <div
+                          style={{
+                            color: "#475569",
+                            marginTop: 4,
+                            whiteSpace: "pre-wrap",
+                            lineHeight: 1.6,
+                          }}
+                        >
+                          {viewingRecord.additionalParts[0].content}
+                        </div>
+                      </div>
+                    ) : null}
                     {Object.keys(PART_LABELS).every(
                       (key) => !viewingRecord[key],
-                    ) && (
+                    ) &&
+                      !viewingRecord.additionalParts?.[0]?.content && (
                       <span
                         style={{
                           color: "#94a3b8",
@@ -1174,23 +1204,50 @@ export default function TSRInitiation() {
                               {formatFileSize(f.fileSize)}
                             </span>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => handleViewDocument(f.filePath)}
+                          <div
                             style={{
-                              background: "#eff6ff",
-                              color: "#1d4ed8",
-                              border: "1px solid #bfdbfe",
-                              padding: "6px 14px",
-                              borderRadius: 6,
-                              cursor: "pointer",
-                              fontSize: 11,
-                              fontWeight: 600,
+                              display: "flex",
+                              gap: 8,
                               flexShrink: 0,
                             }}
                           >
-                            View Document
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() => handleViewDocument(f.filePath)}
+                              style={{
+                                background: "#eff6ff",
+                                color: "#1d4ed8",
+                                border: "1px solid #bfdbfe",
+                                padding: "6px 14px",
+                                borderRadius: 6,
+                                cursor: "pointer",
+                                fontSize: 11,
+                                fontWeight: 600,
+                                flexShrink: 0,
+                              }}
+                            >
+                              View Document
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleDownloadDocument(f.filePath, f.originalName)
+                              }
+                              style={{
+                                background: "#f0fdf4",
+                                color: "#15803d",
+                                border: "1px solid #bbf7d0",
+                                padding: "6px 14px",
+                                borderRadius: 6,
+                                cursor: "pointer",
+                                fontSize: 11,
+                                fontWeight: 600,
+                                flexShrink: 0,
+                              }}
+                            >
+                              Download
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>

@@ -13,7 +13,7 @@ function formatBankName(bankRaw) {
   const b = bankRaw.trim();
   if (/icici/i.test(b)) return "ICICI Home Finance Co. Ltd.";
   if (/ihfc/i.test(b)) return "IHFC Home Finance Co. Ltd.";
-  if (/ahfc/i.test(b)) return "AHFC Home Finance Co. Ltd.";
+  if (/aditya|birla/i.test(b)) return "Aditya Birla Finance Ltd.";
   if (/bajaj/i.test(b)) return "Bajaj Housing Finance Ltd.";
   return b;
 }

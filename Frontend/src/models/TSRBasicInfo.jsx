@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { inp, lbl, grid3 } from "../components/TSRShared";
 
-const BANKS = ["ICICI Bank", "IHFC Bank", "AHFC Bank", "Bajaj Finance"];
+const BANKS = ["ICICI Bank", "IHFC", "Aditya Birla Finance", "Bajaj Finance"];
 
 const AUTHORS = [
   "Adv Narayan",
