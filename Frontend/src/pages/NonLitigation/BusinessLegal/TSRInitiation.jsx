@@ -99,46 +99,38 @@ export default function TSRInitiation() {
   };
 
   // ---------- FIELD CHANGE HANDLERS ----------
-  const handleBasicChange = (e) => {
-    const { name, value } = e.target;
-    setBasicInfo((prev) => ({ ...prev, [name]: value }));
+  const previewRefNo = async (bank) => {
+    setRefNoLoading(true);
 
-    // Bank selected — immediately commit it so the server can generate the
-    // real Ref No right away, instead of the user only finding out on Save.
-    if (name === "bank" && value) {
-      commitBankSelection(value);
+    try {
+      const { data } = await API.get(
+        `/tsr-initiation/preview-ref/${encodeURIComponent(bank)}`,
+        {
+          headers: authHeader(),
+        },
+      );
+
+      setBasicInfo((prev) => ({
+        ...prev,
+        refNo: data.refNo,
+      }));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setRefNoLoading(false);
     }
   };
 
-  const commitBankSelection = async (bank) => {
-    setRefNoLoading(true);
-    try {
-      let response;
-      if (editingRecordId) {
-        response = await API.put(
-          `/tsr-initiation/${editingRecordId}`,
-          { bank },
-          { headers: authHeader() },
-        );
-      } else {
-        response = await API.post(
-          "/tsr-initiation/create",
-          { bank },
-          { headers: authHeader() },
-        );
-      }
-      const saved = response.data.data;
-      setEditingRecordId(saved._id);
-      setBasicInfo((prev) => ({ ...prev, refNo: saved.refNo || "" }));
-      fetchRecords(); // a real record now exists (or was updated) — keep the table in sync
-    } catch (error) {
-      console.error(error);
-      showToast(
-        error.response?.data?.message || "Failed to generate Ref No.",
-        "error",
-      );
-    } finally {
-      setRefNoLoading(false);
+  const handleBasicChange = (e) => {
+    const { name, value } = e.target;
+
+    setBasicInfo((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    if (name === "bank" && value) {
+      previewRefNo(value);
     }
   };
 
@@ -216,7 +208,12 @@ export default function TSRInitiation() {
   const handleSave = async ({ isFinal } = {}) => {
     setSubmitting(true);
     try {
-      const payload = { ...basicInfo, ...initiationData, bulkFiles, additionalParts };
+      const payload = {
+        ...basicInfo,
+        ...initiationData,
+        bulkFiles,
+        additionalParts,
+      };
       delete payload.refNo; // server-generated — never send it back
 
       let response;
@@ -530,7 +527,9 @@ export default function TSRInitiation() {
               additionalParts={additionalParts}
               onUpdatePart={(index, field, value) =>
                 setAdditionalParts((prev) =>
-                  prev.map((p, i) => (i === index ? { ...p, [field]: value } : p))
+                  prev.map((p, i) =>
+                    i === index ? { ...p, [field]: value } : p,
+                  ),
                 )
               }
             />
@@ -1109,16 +1108,16 @@ export default function TSRInitiation() {
                       (key) => !viewingRecord[key],
                     ) &&
                       !viewingRecord.additionalParts?.[0]?.content && (
-                      <span
-                        style={{
-                          color: "#94a3b8",
-                          fontSize: 13,
-                          fontStyle: "italic",
-                        }}
-                      >
-                        No description entered.
-                      </span>
-                    )}
+                        <span
+                          style={{
+                            color: "#94a3b8",
+                            fontSize: 13,
+                            fontStyle: "italic",
+                          }}
+                        >
+                          No description entered.
+                        </span>
+                      )}
                   </div>
                 </div>
 
@@ -1231,7 +1230,10 @@ export default function TSRInitiation() {
                             <button
                               type="button"
                               onClick={() =>
-                                handleDownloadDocument(f.filePath, f.originalName)
+                                handleDownloadDocument(
+                                  f.filePath,
+                                  f.originalName,
+                                )
                               }
                               style={{
                                 background: "#f0fdf4",

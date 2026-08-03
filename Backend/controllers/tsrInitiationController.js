@@ -8,7 +8,7 @@ const { SUPPORTED_BANKS } = TSRInitiation;
 // models/TSRInitiation.js -> SUPPORTED_BANKS.
 const BANK_CODE_MAP = {
   "ICICI Bank": "ICICI",
-  "IHFC": "IHFC",
+  IHFC: "IHFC",
   "Aditya Birla Finance": "ABFL",
   "Bajaj Finance": "BAJAJ",
 };
@@ -25,7 +25,7 @@ const generateRefNo = async (bank) => {
   const counter = await Counter.findOneAndUpdate(
     { _id: code },
     { $inc: { seq: 1 } },
-    { new: true, upsert: true }
+    { new: true, upsert: true },
   );
 
   const padded = String(counter.seq).padStart(2, "0");
@@ -38,7 +38,9 @@ const generateRefNo = async (bank) => {
 const uploadBulkFiles = async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ success: false, message: "No files uploaded" });
+      return res
+        .status(400)
+        .json({ success: false, message: "No files uploaded" });
     }
 
     const files = req.files.map((f) => ({
@@ -92,7 +94,10 @@ const getTSRInitiations = async (req, res) => {
 const getTSRInitiationById = async (req, res) => {
   try {
     const record = await TSRInitiation.findById(req.params.id);
-    if (!record) return res.status(404).json({ success: false, message: "Record not found" });
+    if (!record)
+      return res
+        .status(404)
+        .json({ success: false, message: "Record not found" });
     res.json({ success: true, data: record });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -106,7 +111,9 @@ const updateTSRInitiation = async (req, res) => {
 
     const existing = await TSRInitiation.findById(req.params.id);
     if (!existing) {
-      return res.status(404).json({ success: false, message: "Record not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Record not found" });
     }
 
     if (data.bank && !SUPPORTED_BANKS.includes(data.bank)) {
@@ -124,7 +131,9 @@ const updateTSRInitiation = async (req, res) => {
       data.refNo = await generateRefNo(data.bank);
     }
 
-    const updated = await TSRInitiation.findByIdAndUpdate(req.params.id, data, { new: true });
+    const updated = await TSRInitiation.findByIdAndUpdate(req.params.id, data, {
+      new: true,
+    });
     res.json({ success: true, data: updated });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -140,7 +149,9 @@ const deleteTSRInitiation = async (req, res) => {
   try {
     const record = await TSRInitiation.findByIdAndDelete(req.params.id);
     if (!record) {
-      return res.status(404).json({ success: false, message: "Record not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Record not found" });
     }
     res.json({ success: true, message: "Deleted successfully" });
   } catch (err) {
@@ -148,8 +159,40 @@ const deleteTSRInitiation = async (req, res) => {
   }
 };
 
+const previewRefNo = async (req, res) => {
+  try {
+    const bank = req.params.bank;
+
+    const code = BANK_CODE_MAP[bank];
+
+    if (!code) {
+      return res.json({
+        success: true,
+        refNo: "",
+      });
+    }
+
+    const counter = await Counter.findById(code);
+
+    const nextSeq = (counter?.seq || 0) + 1;
+
+    const refNo = `${code}${String(nextSeq).padStart(2, "0")}`;
+
+    res.json({
+      success: true,
+      refNo,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
 module.exports = {
   uploadBulkFiles,
+  previewRefNo, // <-- ADD
   createTSRInitiation,
   getTSRInitiations,
   getTSRInitiationById,

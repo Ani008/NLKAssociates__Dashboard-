@@ -70,7 +70,7 @@ export default function TSRInitiationModel({
       {/* ── Description 1–4 (part1Desc–part4Desc) ───────────────────── */}
       {["part1Desc", "part2Desc", "part3Desc", "part4Desc"].map((name, i) => (
         <div key={name} style={sectionWrapStyle}>
-          <label style={partLabelStyle}>{`Description ${i + 1}`}</label>
+          <label style={partLabelStyle}>{`Part ${i + 1}`}</label>
           <textarea
             name={name}
             value={form[name] || ""}

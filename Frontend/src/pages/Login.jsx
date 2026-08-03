@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { Eye, EyeOff } from "lucide-react";
+
 import API from "../api/axios";
 import LoginImage from "../assets/login.jpg";
 
@@ -100,29 +102,20 @@ function Login() {
                   />
                   <button
                     type="button"
-                    onMouseDown={() => setShowPassword(true)}
-                    onMouseUp={() => setShowPassword(false)}
-                    onMouseLeave={() => setShowPassword(false)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black cursor-pointer bg-transparent border-none"
-                    style={{ fontSize: '20px' }}
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black transition"
                   >
-                    {showPassword ? "👁️‍🗨️" : "👁️"}
+                    {showPassword ? (
+                      <EyeOff size={20} strokeWidth={2} />
+                    ) : (
+                      <Eye size={20} strokeWidth={2} />
+                    )}
                   </button>
                 </div>
               </div>
 
               {/* ERROR */}
               {error && <p className="text-red-500 text-sm">{error}</p>}
-
-              {/* FORGOT PASSWORD */}
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  className="text-sm text-black hover:underline"
-                >
-                  Forgot password
-                </button>
-              </div>
 
               {/* LOGIN BUTTON */}
               <button
@@ -132,6 +125,16 @@ function Login() {
               >
                 {loading ? "Signing in..." : "Sign in"}
               </button>
+
+              <div className="mt-8 rounded-lg border border-gray-200 bg-gray-50 p-4 text-center">
+                <p className="text-xs text-gray-500 uppercase tracking-wider">
+                  Developed & Maintained By
+                </p>
+
+                <p className="mt-1 font-semibold text-gray-800">
+                  Calyonix Infotech
+                </p>
+              </div>
             </form>
           </div>
         </div>

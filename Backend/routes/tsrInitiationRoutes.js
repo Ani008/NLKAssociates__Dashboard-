@@ -7,6 +7,7 @@ const {
   getTSRInitiationById,
   updateTSRInitiation,
   deleteTSRInitiation,
+  previewRefNo,
 } = require("../controllers/tsrInitiationController");
 const { protect } = require("../middleware/authMiddleware");
 const upload = require("../middleware/upload");
@@ -15,6 +16,7 @@ const upload = require("../middleware/upload");
 // for the frontend to attach to `bulkFiles` on create/update)
 router.post("/upload-bulk", protect, upload.array("files", 30), uploadBulkFiles);
 
+router.get("/preview-ref/:bank", protect, previewRefNo);
 // CRUD operations
 router.post("/create", protect, createTSRInitiation);
 router.get("/list", protect, getTSRInitiations);
