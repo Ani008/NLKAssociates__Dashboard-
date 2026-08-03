@@ -19,6 +19,7 @@ import TSRInitiation from "./pages/NonLitigation/BusinessLegal/TSRInitiation";
 import TSRDrafting from "./pages/NonLitigation/BusinessLegal/TSRDrafting";
 
 import MasterDB from "./pages/MasterDB";
+import LandingPage from "./features/landing-page/LandingPage";
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem("token");
@@ -37,6 +38,9 @@ function App() {
 
         {/* Login */}
         <Route path="/login" element={<Login />} />
+
+        {/* Public Landing Page */}
+        <Route path="/landing" element={<LandingPage />} />
 
         {/* Default Route */}
         <Route
