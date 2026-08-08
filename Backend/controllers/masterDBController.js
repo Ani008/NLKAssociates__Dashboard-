@@ -10,42 +10,76 @@ exports.uploadMasterExcel = async (req, res) => {
       });
     }
 
-    const workbook = XLSX.readFile(req.file.path);
+    console.log(`[MasterDB Upload] Received file: ${req.file.originalname} (${req.file.path})`);
 
+    const workbook = XLSX.readFile(req.file.path);
     const sheetName = workbook.SheetNames[0];
+
+    if (!sheetName) {
+      console.error("[MasterDB Upload] Workbook has no sheets");
+      return res.status(400).json({
+        success: false,
+        message: "The uploaded file has no sheets",
+      });
+    }
 
     const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
+    console.log(`[MasterDB Upload] Parsed ${rows.length} row(s) from sheet "${sheetName}"`);
+
+    if (rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "No data rows found in the sheet. Make sure the header row matches the template and at least one row of data is filled in below it.",
+      });
+    }
+
+    // No restrictions on any field's value - whatever the user has typed in the
+    // sheet is accepted and stored as-is (just trimmed to a plain string).
     const formattedData = rows.map((row) => ({
-      author: row["Author"] || "",
-      applicationNo: row["Application No"] || "",
-      branch: row["Branch"] || "",
+      author: String(row["Author"] ?? "").trim(),
+      applicationNo: String(row["Application No"] ?? "").trim(),
+      branch: String(row["Branch"] ?? "").trim(),
 
       applicant: row["Applicant"]
-        ? String(row["Applicant"]).split(",").map((item) => item.trim())
+        ? String(row["Applicant"]).split(",").map((item) => item.trim()).filter(Boolean)
         : [],
 
       coApplicant: row["Co-Applicants"]
-        ? String(row["Co-Applicants"]).split(",").map((item) => item.trim())
+        ? String(row["Co-Applicants"]).split(",").map((item) => item.trim()).filter(Boolean)
         : [],
 
-      transactionType: row["Transaction Type"] || "",
-
-      propertyDetails: row["Property Details"] || "",
-
-      vetAndCTC: String(row["Vet + CTC"] || "").trim(),
-
-      ctc: row["CTC"] || "",
+      transactionType: String(row["Transaction Type"] ?? "").trim(),
+      propertyDetails: String(row["Property Details"] ?? "").trim(),
+      vetAndCTC: String(row["Vet + CTC"] ?? "").trim(),
+      ctc: String(row["CTC"] ?? "").trim(),
     }));
 
-    await MasterDB.insertMany(formattedData);
+    try {
+      const inserted = await MasterDB.insertMany(formattedData, { ordered: false });
 
-    res.status(200).json({
-      success: true,
-      message: `${formattedData.length} records uploaded successfully`,
-    });
+      console.log(`[MasterDB Upload] Successfully inserted ${inserted.length} record(s)`);
+
+      res.status(200).json({
+        success: true,
+        message: `${inserted.length} record(s) uploaded successfully`,
+      });
+    } catch (dbError) {
+      // Mongoose bulk-write errors carry per-document details in writeErrors.
+      console.error("[MasterDB Upload] Database insert error:", dbError);
+
+      const details =
+        dbError.writeErrors?.map((e) => e.errmsg || e.message).join(" | ") ||
+        dbError.message;
+
+      res.status(400).json({
+        success: false,
+        message: `Failed to save records to the database: ${details}`,
+      });
+    }
   } catch (error) {
-    console.error(error);
+    console.error("[MasterDB Upload] Unexpected error:", error);
 
     res.status(500).json({
       success: false,
@@ -96,6 +130,56 @@ exports.getMasterDB = async (req, res) => {
   }
 };
 
+exports.getMasterDBById = async (req, res) => {
+  try {
+    const record = await MasterDB.findById(req.params.id);
+
+    if (!record) {
+      return res.status(404).json({
+        success: false,
+        message: "Record not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: record,
+    });
+  } catch (error) {
+    console.error("[MasterDB] Fetch by id error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+exports.deleteMasterRecord = async (req, res) => {
+  try {
+    const record = await MasterDB.findByIdAndDelete(req.params.id);
+
+    if (!record) {
+      return res.status(404).json({
+        success: false,
+        message: "Record not found",
+      });
+    }
+
+    console.log(`[MasterDB] Deleted record ${req.params.id}`);
+
+    res.status(200).json({
+      success: true,
+      message: "Record deleted successfully",
+    });
+  } catch (error) {
+    console.error("[MasterDB] Delete error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 exports.downloadTemplate = async (req, res) => {
   try {
     const headers = [
@@ -138,4 +222,3 @@ exports.downloadTemplate = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-

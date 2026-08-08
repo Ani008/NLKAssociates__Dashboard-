@@ -15,10 +15,10 @@ const TSRInitiationSchema = new mongoose.Schema(
     // directly by the client — see createTSRInitiation/updateTSRInitiation.
     refNo: { type: String, default: "", index: true },
 
-    appId: { type: String, default: "" },
-    applicant: { type: String, default: "" },
+    appId: { type: String, default: "", index: true },
+    applicant: { type: String, default: "", index: true },
     coApplicant: { type: String, default: "" },
-    transactionType: { type: String, default: "" },
+    transactionType: { type: String, default: "", index: true },
     branchOffice: { type: String, default: "" },
     village: { type: String, default: "" },
     propertyNo: { type: String, default: "" },

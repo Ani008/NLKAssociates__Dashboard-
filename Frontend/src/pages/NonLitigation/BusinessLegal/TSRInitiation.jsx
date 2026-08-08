@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 
 import API from "../../../api/axios";
 import TSRBasicInfo from "../../../models/TSRBasicInfo";
@@ -43,6 +44,25 @@ function formatFileSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
+// Builds a compact page-number list for the pagination bar, e.g.
+// [1, "…", 4, 5, 6, "…", 12] — always shows first/last page, the current
+// page, and one neighbour on each side; collapses the rest into ellipses.
+function getPageNumbers(current, total) {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
+  const pages = new Set([1, total, current, current - 1, current + 1]);
+  const sorted = [...pages].filter((p) => p >= 1 && p <= total).sort((a, b) => a - b);
+
+  const withEllipses = [];
+  sorted.forEach((p, idx) => {
+    if (idx > 0 && p - sorted[idx - 1] > 1) withEllipses.push("…");
+    withEllipses.push(p);
+  });
+  return withEllipses;
+}
+
 export default function TSRInitiation() {
   const [activeTab, setActiveTab] = useState("basic");
 
@@ -70,6 +90,15 @@ export default function TSRInitiation() {
   const [viewingRecord, setViewingRecord] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
+  // Search + pagination (served from the backend — see fetchRecords)
+  const [searchInput, setSearchInput] = useState(""); // raw input, updates every keystroke
+  const [searchQuery, setSearchQuery] = useState(""); // debounced value actually sent to the API
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const searchDebounceRef = useRef(null);
+
   const authHeader = () => ({
     Authorization: `Bearer ${localStorage.getItem("token")}`,
   });
@@ -79,23 +108,55 @@ export default function TSRInitiation() {
     setTimeout(() => setToast(null), 4200);
   };
 
-  // ---------- FETCH RECORDS ----------
-  useEffect(() => {
-    fetchRecords();
-  }, []);
+  // ---------- FETCH RECORDS (search + pagination served from backend) ----------
+  const fetchRecords = useCallback(
+    async ({ page: pageArg, pageSize: pageSizeArg, search: searchArg } = {}) => {
+      const effectivePage = pageArg ?? page;
+      const effectivePageSize = pageSizeArg ?? pageSize;
+      const effectiveSearch = searchArg ?? searchQuery;
 
-  const fetchRecords = async () => {
-    setLoadingRecords(true);
-    try {
-      const { data } = await API.get("/tsr-initiation/list", {
-        headers: authHeader(),
-      });
-      setRecords(data.data || []);
-    } catch (err) {
-      console.error("Failed to fetch records", err);
-    } finally {
-      setLoadingRecords(false);
-    }
+      setLoadingRecords(true);
+      try {
+        const { data } = await API.get("/tsr-initiation/list", {
+          headers: authHeader(),
+          params: {
+            page: effectivePage,
+            limit: effectivePageSize,
+            search: effectiveSearch,
+          },
+        });
+        setRecords(data.data || []);
+        setTotalRecords(data.pagination?.total ?? (data.data || []).length);
+        setTotalPages(data.pagination?.pages ?? 1);
+      } catch (err) {
+        console.error("Failed to fetch records", err);
+      } finally {
+        setLoadingRecords(false);
+      }
+    },
+    [page, pageSize, searchQuery],
+  );
+
+  // Debounce the search input (350ms) before it becomes the query that's
+  // actually sent to the backend, and reset back to page 1 on every new search.
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      setSearchQuery(searchInput.trim());
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(searchDebounceRef.current);
+  }, [searchInput]);
+
+  // Re-fetch whenever page, pageSize, or the debounced search query changes.
+  useEffect(() => {
+    fetchRecords({ page, pageSize, search: searchQuery });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize, searchQuery]);
+
+  const handlePageSizeChange = (e) => {
+    setPageSize(Number(e.target.value));
+    setPage(1);
   };
 
   // ---------- FIELD CHANGE HANDLERS ----------
@@ -692,8 +753,82 @@ export default function TSRInitiation() {
           <span
             style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}
           >
-            {records.length} record{records.length !== 1 ? "s" : ""}
+            {totalRecords} record{totalRecords !== 1 ? "s" : ""}
           </span>
+        </div>
+
+        {/* ---- Search + page-size controls ---- */}
+        <div
+          style={{
+            padding: "16px 30px",
+            borderBottom: "1px solid var(--border)",
+            display: "flex",
+            gap: 12,
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ position: "relative", flex: 1, minWidth: 260 }}>
+            <Search
+              size={16}
+              style={{
+                position: "absolute",
+                left: 12,
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "#94a3b8",
+              }}
+            />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search by Application ID, Applicant Name, Transaction Type…"
+              style={{
+                width: "100%",
+                padding: "10px 12px 10px 36px",
+                borderRadius: 8,
+                border: "1px solid var(--border)",
+                fontSize: 13,
+                outline: "none",
+                boxSizing: "border-box",
+              }}
+            />
+          </div>
+
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              fontSize: 12,
+              color: "var(--muted)",
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+            }}
+          >
+            Show
+            <select
+              value={pageSize}
+              onChange={handlePageSizeChange}
+              style={{
+                padding: "8px 10px",
+                borderRadius: 8,
+                border: "1px solid var(--border)",
+                fontSize: 13,
+                fontWeight: 600,
+                color: "var(--black)",
+                cursor: "pointer",
+                background: "white",
+              }}
+            >
+              {[25, 50, 75, 100].map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
 
         {loadingRecords ? (
@@ -706,8 +841,9 @@ export default function TSRInitiation() {
           <div
             style={{ padding: 40, textAlign: "center", color: "var(--muted)" }}
           >
-            No TSR Initiation records yet. Fill the form above and click Save
-            Progress or Save TSR Initiation.
+            {searchQuery
+              ? `No records match "${searchQuery}".`
+              : "No TSR Initiation records yet. Fill the form above and click Save Progress or Save TSR Initiation."}
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
@@ -872,6 +1008,106 @@ export default function TSRInitiation() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* ---- Pagination footer ---- */}
+        {!loadingRecords && totalRecords > 0 && (
+          <div
+            style={{
+              padding: "14px 30px",
+              borderTop: "1px solid var(--border)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 12,
+            }}
+          >
+            <span style={{ fontSize: 12, color: "var(--muted)" }}>
+              Showing {(page - 1) * pageSize + 1}–
+              {Math.min(page * pageSize, totalRecords)} of {totalRecords}
+            </span>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 6,
+                  border: "1px solid var(--border)",
+                  background: "white",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: page === 1 ? "not-allowed" : "pointer",
+                  opacity: page === 1 ? 0.5 : 1,
+                }}
+              >
+                <ChevronLeft size={15} />
+              </button>
+
+              {getPageNumbers(page, totalPages).map((p, idx) =>
+                p === "…" ? (
+                  <span
+                    key={`ellipsis-${idx}`}
+                    style={{
+                      width: 32,
+                      textAlign: "center",
+                      fontSize: 12,
+                      color: "var(--muted)",
+                    }}
+                  >
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setPage(p)}
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 6,
+                      border:
+                        p === page
+                          ? "1px solid var(--black)"
+                          : "1px solid var(--border)",
+                      background: p === page ? "var(--black)" : "white",
+                      color: p === page ? "white" : "var(--black)",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {p}
+                  </button>
+                ),
+              )}
+
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 6,
+                  border: "1px solid var(--border)",
+                  background: "white",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: page === totalPages ? "not-allowed" : "pointer",
+                  opacity: page === totalPages ? 0.5 : 1,
+                }}
+              >
+                <ChevronRight size={15} />
+              </button>
+            </div>
           </div>
         )}
       </div>

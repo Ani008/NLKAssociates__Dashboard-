@@ -80,11 +80,53 @@ const createTSRInitiation = async (req, res) => {
   }
 };
 
-// 3. GET ALL
+// 3. GET ALL — supports server-side search + pagination.
+// Query params:
+//   page   (1-indexed, default 1)
+//   limit  (records per page, default 25)
+//   search (matched against appId, applicant, coApplicant, transactionType,
+//           refNo, bank, branchOffice, district — case-insensitive substring)
 const getTSRInitiations = async (req, res) => {
   try {
-    const records = await TSRInitiation.find().sort({ createdAt: -1 });
-    res.json({ success: true, data: records });
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.max(1, Number(req.query.limit) || 25);
+    const search = (req.query.search || "").trim();
+
+    const query = {};
+
+    if (search) {
+      const regex = { $regex: search, $options: "i" };
+      query.$or = [
+        { appId: regex },
+        { applicant: regex },
+        { coApplicant: regex },
+        { transactionType: regex },
+        { refNo: regex },
+        { bank: regex },
+        { branchOffice: regex },
+        { district: regex },
+        { village: regex },
+        { propertyNo: regex },
+      ];
+    }
+
+    const total = await TSRInitiation.countDocuments(query);
+
+    const records = await TSRInitiation.find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    res.json({
+      success: true,
+      data: records,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.max(1, Math.ceil(total / limit)),
+      },
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

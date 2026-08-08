@@ -7,6 +7,9 @@ import {
   ChevronLeft,
   ChevronRight,
   FileSpreadsheet,
+  Eye,
+  Trash2,
+  X,
 } from "lucide-react";
 
 import API from "../api/axios";
@@ -23,6 +26,9 @@ export default function MasterDB() {
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
+
+  const [viewRecord, setViewRecord] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   const limit = 10;
 
@@ -74,7 +80,8 @@ export default function MasterDB() {
       fetchRecords(1, search);
     } catch (error) {
       console.error(error);
-      alert("Failed to upload file");
+      const backendMessage = error?.response?.data?.message;
+      alert(backendMessage || error.message || "Failed to upload file");
     } finally {
       setUploading(false);
     }
@@ -100,6 +107,38 @@ export default function MasterDB() {
     } catch (error) {
       console.error("Failed to download template:", error);
       alert("Failed to download template");
+    }
+  };
+
+  const handleView = (row) => {
+    setViewRecord(row);
+  };
+
+  const handleDelete = async (row) => {
+    const confirmed = window.confirm(
+      `Delete record for "${row.applicant?.join?.(", ") || row.applicant || "this entry"}"? This cannot be undone.`,
+    );
+    if (!confirmed) return;
+
+    try {
+      setDeletingId(row._id);
+
+      const { data } = await API.delete(`/masterdb/${row._id}`);
+
+      alert(data.message || "Record deleted successfully");
+
+      // If we deleted the last record on this page (and it's not page 1), go back a page.
+      const isLastRecordOnPage = records.length === 1 && page > 1;
+      const nextPage = isLastRecordOnPage ? page - 1 : page;
+
+      setPage(nextPage);
+      fetchRecords(nextPage, search);
+    } catch (error) {
+      console.error(error);
+      const backendMessage = error?.response?.data?.message;
+      alert(backendMessage || error.message || "Failed to delete record");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -336,9 +375,24 @@ export default function MasterDB() {
           <table
             style={{
               width: "100%",
+              tableLayout: "fixed",
               borderCollapse: "collapse",
             }}
           >
+            <colgroup>
+              <col style={{ width: "4%" }} />
+              <col style={{ width: "8%" }} />
+              <col style={{ width: "9%" }} />
+              <col style={{ width: "8%" }} />
+              <col style={{ width: "11%" }} />
+              <col style={{ width: "11%" }} />
+              <col style={{ width: "10%" }} />
+              <col style={{ width: "14%" }} />
+              <col style={{ width: "7%" }} />
+              <col style={{ width: "6%" }} />
+              <col style={{ width: "12%" }} />
+            </colgroup>
+
             <thead>
               <tr
                 style={{
@@ -356,16 +410,20 @@ export default function MasterDB() {
                   "Property Details",
                   "Vet + CTC",
                   "CTC",
+                  "Actions",
                 ].map((header) => (
                   <th
                     key={header}
+                    title={header}
                     style={{
-                      padding: "14px",
-                      textAlign: "left",
+                      padding: "10px 8px",
+                      textAlign: header === "Actions" ? "center" : "left",
                       borderBottom: "1px solid #e2e8f0",
                       color: "#334155",
-                      fontSize: "14px",
+                      fontSize: "13px",
                       whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
                     }}
                   >
                     {header}
@@ -378,7 +436,7 @@ export default function MasterDB() {
               {loading ? (
                 <tr>
                   <td
-                    colSpan="7"
+                    colSpan="11"
                     style={{
                       textAlign: "center",
                       padding: "50px",
@@ -390,7 +448,7 @@ export default function MasterDB() {
               ) : records.length === 0 ? (
                 <tr>
                   <td
-                    colSpan="7"
+                    colSpan="11"
                     style={{
                       textAlign: "center",
                       padding: "50px",
@@ -400,37 +458,88 @@ export default function MasterDB() {
                   </td>
                 </tr>
               ) : (
-                records.map((row, index) => (
-                  <tr key={row._id}>
-                    <td style={cellStyle}>{(page - 1) * limit + index + 1}</td>
+                records.map((row, index) => {
+                  const applicantText = Array.isArray(row.applicant)
+                    ? row.applicant.join(", ")
+                    : row.applicant || "-";
 
-                    <td style={cellStyle}>{row.author || "-"}</td>
+                  const coApplicantText = Array.isArray(row.coApplicant)
+                    ? row.coApplicant.join(", ")
+                    : row.coApplicant || "-";
 
-                    <td style={cellStyle}>{row.applicationNo || "-"}</td>
+                  return (
+                    <tr key={row._id}>
+                      <td style={cellStyle}>
+                        {(page - 1) * limit + index + 1}
+                      </td>
 
-                    <td style={cellStyle}>{row.branch || "-"}</td>
+                      <td style={cellStyle} title={row.author}>
+                        {row.author || "-"}
+                      </td>
 
-                    <td style={cellStyle}>
-                      {Array.isArray(row.applicant)
-                        ? row.applicant.join(", ")
-                        : row.applicant || "-"}
-                    </td>
+                      <td style={cellStyle} title={row.applicationNo}>
+                        {row.applicationNo || "-"}
+                      </td>
 
-                    <td style={cellStyle}>
-                      {Array.isArray(row.coApplicant)
-                        ? row.coApplicant.join(", ")
-                        : row.coApplicant || "-"}
-                    </td>
+                      <td style={cellStyle} title={row.branch}>
+                        {row.branch || "-"}
+                      </td>
 
-                    <td style={cellStyle}>{row.transactionType || "-"}</td>
+                      <td style={cellStyle} title={applicantText}>
+                        {applicantText}
+                      </td>
 
-                    <td style={cellStyle}>{row.propertyDetails || "-"}</td>
+                      <td style={cellStyle} title={coApplicantText}>
+                        {coApplicantText}
+                      </td>
 
-                    <td style={cellStyle}>{row.vetAndCTC || "-"}</td>
+                      <td style={cellStyle} title={row.transactionType}>
+                        {row.transactionType || "-"}
+                      </td>
 
-                    <td style={cellStyle}>{row.ctc || "-"}</td>
-                  </tr>
-                ))
+                      <td style={cellStyle} title={row.propertyDetails}>
+                        {row.propertyDetails || "-"}
+                      </td>
+
+                      <td style={cellStyle} title={row.vetAndCTC}>
+                        {row.vetAndCTC || "-"}
+                      </td>
+
+                      <td style={cellStyle}>{row.ctc || "-"}</td>
+
+                      <td style={{ ...cellStyle, textAlign: "center" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "6px",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <button
+                            onClick={() => handleView(row)}
+                            title="View record"
+                            style={actionButton("#eff6ff", "#2563eb")}
+                          >
+                            <Eye size={15} />
+                          </button>
+
+                          <button
+                            onClick={() => handleDelete(row)}
+                            disabled={deletingId === row._id}
+                            title="Delete record"
+                            style={actionButton("#fef2f2", "#dc2626")}
+                          >
+                            {deletingId === row._id ? (
+                              <Loader2 size={15} className="animate-spin" />
+                            ) : (
+                              <Trash2 size={15} />
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -475,15 +584,138 @@ export default function MasterDB() {
           </div>
         </div>
       </div>
+
+      {/* VIEW RECORD MODAL */}
+
+      {viewRecord && (
+        <div
+          onClick={() => setViewRecord(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            padding: "20px",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#fff",
+              borderRadius: "16px",
+              width: "100%",
+              maxWidth: "600px",
+              maxHeight: "85vh",
+              overflowY: "auto",
+              boxShadow: "0 20px 50px rgba(0,0,0,0.25)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "18px 22px",
+                borderBottom: "1px solid #e2e8f0",
+                position: "sticky",
+                top: 0,
+                background: "#fff",
+                borderRadius: "16px 16px 0 0",
+              }}
+            >
+              <h3 style={{ margin: 0, color: "#0f172a" }}>Record Details</h3>
+
+              <button
+                onClick={() => setViewRecord(null)}
+                style={{
+                  border: "none",
+                  background: "#f1f5f9",
+                  borderRadius: "8px",
+                  width: "32px",
+                  height: "32px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div style={{ padding: "22px" }}>
+              {[
+                ["Author", viewRecord.author],
+                ["Application No", viewRecord.applicationNo],
+                ["Branch", viewRecord.branch],
+                [
+                  "Applicant",
+                  Array.isArray(viewRecord.applicant)
+                    ? viewRecord.applicant.join(", ")
+                    : viewRecord.applicant,
+                ],
+                [
+                  "Co Applicant",
+                  Array.isArray(viewRecord.coApplicant)
+                    ? viewRecord.coApplicant.join(", ")
+                    : viewRecord.coApplicant,
+                ],
+                ["Transaction Type", viewRecord.transactionType],
+                ["Property Details", viewRecord.propertyDetails],
+                ["Vet + CTC", viewRecord.vetAndCTC],
+                ["CTC", viewRecord.ctc],
+              ].map(([label, value]) => (
+                <div
+                  key={label}
+                  style={{
+                    display: "flex",
+                    padding: "10px 0",
+                    borderBottom: "1px solid #f1f5f9",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "160px",
+                      flexShrink: 0,
+                      color: "#64748b",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {label}
+                  </div>
+
+                  <div
+                    style={{
+                      color: "#0f172a",
+                      fontSize: "14px",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {value || "-"}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 const cellStyle = {
-  padding: "14px",
+  padding: "10px 8px",
   borderBottom: "1px solid #f1f5f9",
   color: "#334155",
-  fontSize: "14px",
+  fontSize: "13px",
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  maxWidth: 0, // forces overflow/ellipsis to respect the colgroup % width in a table-layout:fixed table
 };
 
 const paginationButton = {
@@ -497,3 +729,16 @@ const paginationButton = {
   alignItems: "center",
   justifyContent: "center",
 };
+
+const actionButton = (bg, color) => ({
+  width: "28px",
+  height: "28px",
+  borderRadius: "6px",
+  border: "none",
+  background: bg,
+  color,
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+});

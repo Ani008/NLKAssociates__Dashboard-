@@ -39,7 +39,6 @@ const masterDBSchema = new mongoose.Schema(
 
     vetAndCTC: {
       type: String,
-      enum: ["CTC", "CTC +VET", "CTC only", "VET", ""],
       default: "",
     },
     ctc: {
