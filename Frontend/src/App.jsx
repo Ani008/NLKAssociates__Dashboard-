@@ -21,6 +21,7 @@ import TSRDrafting from "./pages/NonLitigation/BusinessLegal/TSRDrafting";
 import MasterDB from "./pages/MasterDB";
 import LandingPage from "./features/landing-page/LandingPage";
 
+
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem("token");
 
@@ -31,51 +32,93 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+
 function App() {
   return (
-    <BrowserRouter basename="/dashboard">
+    <BrowserRouter>
       <Routes>
 
-        {/* Login */}
+        {/* =========================
+            PUBLIC LANDING PAGE
+        ========================= */}
+
+        <Route path="/" element={<LandingPage />} />
+
+
+        {/* =========================
+            LOGIN
+        ========================= */}
+
         <Route path="/login" element={<Login />} />
 
-        {/* Public Landing Page */}
-        <Route path="/landing" element={<LandingPage />} />
 
-        {/* Default Route */}
+        {/* =========================
+            DASHBOARD
+        ========================= */}
+
         <Route
-          path="/"
+          path="/dashboard"
           element={
             <ProtectedRoute>
               <MainLayout />
             </ProtectedRoute>
           }
         >
+          {/* /dashboard */}
           <Route index element={<Dashboard />} />
 
+          {/* /dashboard/cases */}
           <Route path="cases" element={<CaseList />} />
+
+          {/* /dashboard/cases/new */}
           <Route path="cases/new" element={<CaseCreate />} />
+
+          {/* /dashboard/cases/:id */}
           <Route path="cases/:id" element={<CaseDetail />} />
 
-          <Route path="non-litigation/:bank" element={<BankCases />} />
-          <Route path="tsr/:caseId" element={<TSRGenerator />} />
+          {/* /dashboard/non-litigation/:bank */}
+          <Route
+            path="non-litigation/:bank"
+            element={<BankCases />}
+          />
 
+          {/* /dashboard/tsr/:caseId */}
+          <Route
+            path="tsr/:caseId"
+            element={<TSRGenerator />}
+          />
+
+          {/* /dashboard/approvals */}
           <Route path="approvals" element={<Approvals />} />
+
+          {/* /dashboard/search */}
           <Route path="search" element={<SearchPage />} />
+
+          {/* /dashboard/reports */}
           <Route path="reports" element={<Reports />} />
 
+          {/* /dashboard/masterDB */}
           <Route path="masterDB" element={<MasterDB />} />
 
+          {/* /dashboard/non-litigation/business-legal/tsr-initiation */}
           <Route
             path="non-litigation/business-legal/tsr-initiation"
             element={<TSRInitiation />}
           />
 
+          {/* /dashboard/non-litigation/business-legal/tsr-drafting */}
           <Route
             path="non-litigation/business-legal/tsr-drafting"
             element={<TSRDrafting />}
           />
         </Route>
+
+
+        {/* =========================
+            FALLBACK
+        ========================= */}
+
+        <Route path="*" element={<Navigate to="/" replace />} />
 
       </Routes>
     </BrowserRouter>

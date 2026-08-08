@@ -11,7 +11,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
 
   const NAV = [
     { label: "Dashboard", icon: "⊞", path: "/dashboard" },
-    { label: "All Cases", icon: "📁", path: "/cases" },
+    { label: "All Cases", icon: "📁", path: "/dashboard/cases" },
     {
       label: "Non-Litigation",
       icon: "🏛️",
@@ -25,12 +25,12 @@ export default function Sidebar({ collapsed, setCollapsed }) {
           children: [
             {
               label: "TSR Initiation",
-              path: "/non-litigation/business-legal/tsr-initiation",
+              path: "/dashboard/non-litigation/business-legal/tsr-initiation",
               icon: "📋",
             },
             {
               label: "TSR Drafting",
-              path: "/non-litigation/business-legal/tsr-drafting",
+              path: "/dashboard/non-litigation/business-legal/tsr-drafting",
               icon: "✍️",
             },
           ],
@@ -47,7 +47,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
     }
     localStorage.removeItem("token");
     localStorage.removeItem("role");
-    navigate("/");
+    navigate("/login");
   };
 
   const isActive = (path) => location.pathname === path;

@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
+import { Link } from "react-router-dom";
 import AOS from "aos";
 import {
   FaScaleBalanced,
@@ -16,7 +17,7 @@ import {
   FaLinkedin,
   FaInstagram,
   FaWhatsapp,
-  FaAngleUp
+  FaAngleUp,
 } from "react-icons/fa6";
 
 // ==========================================
@@ -689,6 +690,37 @@ const LANDING_CSS = `
   text-align: center;
 }
 
+.nlk-landing-root .nlk-dashboard-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 11px 24px;
+
+  background: var(--nlk-gold);
+  color: #fff;
+
+  border: 1px solid var(--nlk-gold);
+  border-radius: 50px;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  text-decoration: none;
+
+  transition: all 0.3s ease;
+
+  white-space: nowrap;
+}
+
+.nlk-landing-root .nlk-dashboard-btn:hover {
+  background: #b88b2b;
+  border-color: #b88b2b;
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
 /* ================= FLOATING BUTTONS ================= */
 .nlk-landing-root .nlk-whatsapp {
   position: fixed;
@@ -743,18 +775,22 @@ const LANDING_CSS = `
 
 /* ================= RESPONSIVE ================= */
 @media (max-width: 992px) {
-  .nlk-landing-root .nlk-hero {
-    height: auto;
-    padding: 150px 0 80px;
+  .nlk-landing-root .nlk-navbar-inner {
+    flex-wrap: wrap;
+    gap: 12px;
   }
-  .nlk-landing-root .nlk-hero-heading {
-    font-size: 48px;
+
+  .nlk-landing-root .nlk-navbar-collapse {
+    display: none;
   }
-  .nlk-landing-root .nlk-section-title {
-    font-size: 34px;
+
+  .nlk-landing-root .nlk-navbar-brand {
+    font-size: 20px;
   }
-  .nlk-landing-root .nlk-profile-card {
-    margin-top: 50px;
+
+  .nlk-landing-root .nlk-dashboard-btn {
+    padding: 9px 18px;
+    font-size: 13px;
   }
 }
 
@@ -882,7 +918,8 @@ const faqData = [
   {
     id: "q2",
     question: "Which courts do you practice in?",
-    answer: "Civil, Criminal, DRT, NCLT, Cooperative Courts, Revenue Authorities and Tribunals.",
+    answer:
+      "Civil, Criminal, DRT, NCLT, Cooperative Courts, Revenue Authorities and Tribunals.",
   },
   {
     id: "q3",
@@ -923,7 +960,7 @@ function useCounter(target, duration = 2000) {
           }, 15);
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1 },
     );
 
     observer.observe(el);
@@ -1007,28 +1044,37 @@ const SECTION_IDS = NAV_LINKS.map((l) => l.id);
 
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const activeId = useScrollSpy(SECTION_IDS, 120);
-  const menuRef = useRef(null);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 80);
+
     window.addEventListener("scroll", handleScroll);
+
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const handleNavClick = useCallback((e, targetId) => {
     e.preventDefault();
+
     const el = document.getElementById(targetId);
+
     if (el) {
-      window.scrollTo({ top: el.offsetTop - 70, behavior: "smooth" });
-      setMenuOpen(false);
+      window.scrollTo({
+        top: el.offsetTop - 70,
+        behavior: "smooth",
+      });
     }
   }, []);
 
   return (
-    <nav className={`nlk-navbar nlk-navbar-fixed ${scrolled ? "nlk-navbar-scrolled" : ""}`}>
+    <nav
+      className={`nlk-navbar nlk-navbar-fixed ${
+        scrolled ? "nlk-navbar-scrolled" : ""
+      }`}
+    >
       <div className="nlk-container nlk-navbar-inner">
+        {/* BRAND */}
         <a
           className="nlk-navbar-brand"
           href="#landing-home"
@@ -1038,26 +1084,15 @@ function Navbar() {
           Adv. Narayan L. Khamkar
         </a>
 
-        <button
-          className="nlk-navbar-toggler"
-          type="button"
-          aria-label="Toggle navigation"
-          onClick={() => setMenuOpen((prev) => !prev)}
-        >
-          <span className="nlk-toggler-bar" />
-          <span className="nlk-toggler-bar" />
-          <span className="nlk-toggler-bar" />
-        </button>
-
-        <div
-          ref={menuRef}
-          className={`nlk-navbar-collapse ${menuOpen ? "nlk-navbar-collapse--open" : ""}`}
-        >
+        {/* NAVIGATION */}
+        <div className="nlk-navbar-collapse">
           <ul className="nlk-navbar-nav">
             {NAV_LINKS.map(({ id, label }) => (
               <li key={id} className="nlk-nav-item">
                 <a
-                  className={`nlk-nav-link ${activeId === id ? "nlk-nav-link--active" : ""}`}
+                  className={`nlk-nav-link ${
+                    activeId === id ? "nlk-nav-link--active" : ""
+                  }`}
                   href={`#${id}`}
                   onClick={(e) => handleNavClick(e, id)}
                 >
@@ -1067,11 +1102,15 @@ function Navbar() {
             ))}
           </ul>
         </div>
+
+        {/* DASHBOARD */}
+        <Link to="/dashboard" className="nlk-dashboard-btn">
+          Dashboard
+        </Link>
       </div>
     </nav>
   );
 }
-
 function Hero() {
   const heroContentRef = useRef(null);
   const typedText = useTypewriter("Justice.\nIntegrity.\nCommitment.", 60, 500);
@@ -1114,10 +1153,18 @@ function Hero() {
               Civil, Criminal, Property and Arbitration matters.
             </p>
             <div className="nlk-hero-btns">
-              <a href="#landing-contact" className="nlk-btn nlk-btn-gold" onClick={(e) => scrollTo(e, "landing-contact")}>
+              <a
+                href="#landing-contact"
+                className="nlk-btn nlk-btn-gold"
+                onClick={(e) => scrollTo(e, "landing-contact")}
+              >
                 Book Consultation
               </a>
-              <a href="#landing-about" className="nlk-btn nlk-btn-outline" onClick={(e) => scrollTo(e, "landing-about")}>
+              <a
+                href="#landing-about"
+                className="nlk-btn nlk-btn-outline"
+                onClick={(e) => scrollTo(e, "landing-about")}
+              >
                 Know More
               </a>
             </div>
@@ -1225,7 +1272,7 @@ const ICON_MAP = {
   FaScaleBalanced,
   FaHouse,
   FaFileSignature,
-  FaUserShield
+  FaUserShield,
 };
 
 function PracticeCard({ icon, title, description }) {
@@ -1236,8 +1283,10 @@ function PracticeCard({ icon, title, description }) {
     const el = cardRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setVisible(true); },
-      { threshold: 0.2 }
+      ([entry]) => {
+        if (entry.isIntersecting) setVisible(true);
+      },
+      { threshold: 0.2 },
     );
     observer.observe(el);
     return () => observer.unobserve(el);
@@ -1256,9 +1305,7 @@ function PracticeCard({ icon, title, description }) {
       }}
     >
       <div className="nlk-service-card">
-        <div className="nlk-service-icon">
-          {IconComp && <IconComp />}
-        </div>
+        <div className="nlk-service-icon">{IconComp && <IconComp />}</div>
         <h4>{title}</h4>
         {description && <p>{description}</p>}
       </div>
@@ -1319,7 +1366,10 @@ function Clients() {
         </div>
         <div className="nlk-row nlk-text-center">
           {clientsData.map((client, i) => (
-            <div key={i} className="nlk-col-lg-3 nlk-col-md-4 nlk-col-6 nlk-mb-4">
+            <div
+              key={i}
+              className="nlk-col-lg-3 nlk-col-md-4 nlk-col-6 nlk-mb-4"
+            >
               <div className="nlk-client-logo">{client}</div>
             </div>
           ))}
@@ -1380,7 +1430,9 @@ function FAQ() {
                     aria-expanded={isOpen}
                   >
                     {item.question}
-                    <span className="nlk-accordion-chevron">{isOpen ? "−" : "+"}</span>
+                    <span className="nlk-accordion-chevron">
+                      {isOpen ? "−" : "+"}
+                    </span>
                   </button>
                 </h2>
                 <div
@@ -1433,19 +1485,30 @@ function Contact() {
   };
 
   return (
-    <section id="landing-contact" className="nlk-section nlk-bg-light" data-aos="fade-up">
+    <section
+      id="landing-contact"
+      className="nlk-section nlk-bg-light"
+      data-aos="fade-up"
+    >
       <div className="nlk-container">
         <div className="nlk-row">
           <div className="nlk-col-lg-6">
             <h2 className="nlk-section-title">Contact Us</h2>
-            <p><strong>Adv. Narayan L. Khamkar &amp; Associates</strong></p>
+            <p>
+              <strong>Adv. Narayan L. Khamkar &amp; Associates</strong>
+            </p>
             <p>
               <FaLocationDot className="nlk-contact-icon" />
               Flat No.3, Gurudatta Apartment, Behind Bhawkar Garage, Regent
               Hotel Lane, Shivajinagar, Pune – 411005
             </p>
-            <p><FaPhone className="nlk-contact-icon" /> +91 9922810198</p>
-            <p><FaEnvelope className="nlk-contact-icon" /> narayan.khamkar@gmail.com</p>
+            <p>
+              <FaPhone className="nlk-contact-icon" /> +91 9922810198
+            </p>
+            <p>
+              <FaEnvelope className="nlk-contact-icon" />{" "}
+              narayan.khamkar@gmail.com
+            </p>
             <div className="nlk-map-wrapper">
               <iframe
                 src="https://maps.google.com/maps?q=Shivajinagar%20Pune&t=&z=15&ie=UTF8&iwloc=&output=embed"
@@ -1488,7 +1551,10 @@ function Contact() {
                   rows="5"
                   placeholder="Describe your legal matter"
                 />
-                <button type="submit" className="nlk-btn nlk-btn-gold nlk-w-100">
+                <button
+                  type="submit"
+                  className="nlk-btn nlk-btn-gold nlk-w-100"
+                >
                   Book Consultation
                 </button>
               </form>
@@ -1530,7 +1596,8 @@ function Footer() {
           </div>
         </div>
         <div className="nlk-footer-bottom">
-          © {new Date().getFullYear()} Adv. Narayan L. Khamkar &amp; Associates. All Rights Reserved.
+          © {new Date().getFullYear()} Adv. Narayan L. Khamkar &amp; Associates.
+          All Rights Reserved.
         </div>
       </div>
     </footer>
@@ -1569,7 +1636,7 @@ function ScrollTopButton() {
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
-      behavior: "smooth"
+      behavior: "smooth",
     });
   };
 
@@ -1594,7 +1661,7 @@ export default function LandingPage() {
     AOS.init({
       duration: 900,
       easing: "ease-in-out",
-      once: true
+      once: true,
     });
 
     // 2. Inject CSS stylesheet dynamically into <head>
