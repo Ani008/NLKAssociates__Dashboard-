@@ -773,6 +773,80 @@ const LANDING_CSS = `
   pointer-events: auto;
 }
 
+/* ================= DISCLAIMER / DISCLAIMER MODAL ================= */
+.nlk-landing-root.nlk-disclaimer-open > :not(.nlk-disclaimer-modal) {
+  filter: blur(8px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.nlk-landing-root .nlk-disclaimer-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.72);
+  overflow-y: auto;
+}
+
+.nlk-landing-root .nlk-disclaimer-card {
+  width: min(900px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  background: #fff;
+  color: #333;
+  border-radius: 18px;
+  padding: 35px;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.35);
+}
+
+.nlk-landing-root .nlk-disclaimer-title {
+  margin: 0 0 20px;
+  color: var(--nlk-primary);
+  font-size: 30px;
+  line-height: 1.25;
+}
+
+.nlk-landing-root .nlk-disclaimer-card p {
+  margin: 0 0 16px;
+  line-height: 1.7;
+}
+
+.nlk-landing-root .nlk-disclaimer-card ul {
+  margin: 0 0 20px;
+  padding-left: 22px;
+}
+
+.nlk-landing-root .nlk-disclaimer-card li {
+  margin-bottom: 14px;
+  line-height: 1.7;
+}
+
+.nlk-landing-root .nlk-disclaimer-approve {
+  display: block;
+  margin: 25px auto 0;
+  min-width: 180px;
+}
+
+@media (max-width: 768px) {
+  .nlk-landing-root .nlk-disclaimer-modal {
+    padding: 14px;
+  }
+
+  .nlk-landing-root .nlk-disclaimer-card {
+    max-height: calc(100vh - 28px);
+    padding: 24px 20px;
+    border-radius: 14px;
+  }
+
+  .nlk-landing-root .nlk-disclaimer-title {
+    font-size: 24px;
+  }
+}
+
 /* ================= RESPONSIVE ================= */
 @media (max-width: 992px) {
   .nlk-landing-root .nlk-navbar-inner {
@@ -1081,7 +1155,7 @@ function Navbar() {
           onClick={(e) => handleNavClick(e, "landing-home")}
         >
           <FaScaleBalanced className="nlk-brand-icon" />
-          Adv. Narayan L. Khamkar
+          NLK Law Associates
         </a>
 
         {/* NAVIGATION */}
@@ -1220,7 +1294,7 @@ function About() {
         <div className="nlk-row nlk-align-center">
           <div className="nlk-col-lg-5">
             <img
-              src="/images/landing/advocate.jpg"
+              src="/images/landing/advocate.jpeg"
               className="nlk-about-img"
               alt="Advocate Narayan L. Khamkar"
             />
@@ -1495,7 +1569,7 @@ function Contact() {
           <div className="nlk-col-lg-6">
             <h2 className="nlk-section-title">Contact Us</h2>
             <p>
-              <strong>Adv. Narayan L. Khamkar &amp; Associates</strong>
+              <strong>NLK Law Associates</strong>
             </p>
             <p>
               <FaLocationDot className="nlk-contact-icon" />
@@ -1572,7 +1646,7 @@ function Footer() {
       <div className="nlk-container">
         <div className="nlk-row">
           <div className="nlk-col-lg-4">
-            <h4>Adv. Narayan L. Khamkar &amp; Associates</h4>
+            <h4>NLK Law Associates</h4>
             <p>Justice • Integrity • Commitment</p>
           </div>
           <div className="nlk-col-lg-4">
@@ -1596,8 +1670,14 @@ function Footer() {
           </div>
         </div>
         <div className="nlk-footer-bottom">
-          © {new Date().getFullYear()} Adv. Narayan L. Khamkar &amp; Associates.
-          All Rights Reserved.
+          <a
+            href="https://calyonix.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "inherit", textDecoration: "none" }}
+          >
+            Developed and managed by Calyonix Infotech
+          </a>
         </div>
       </div>
     </footer>
@@ -1656,6 +1736,16 @@ function ScrollTopButton() {
 // ==========================================
 
 export default function LandingPage() {
+  const [disclaimerOpen, setDisclaimerOpen] = useState(true);
+
+  useEffect(() => {
+    document.body.style.overflow = disclaimerOpen ? "hidden" : "";
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [disclaimerOpen]);
+
   useEffect(() => {
     // 1. Initialize AOS animation library
     AOS.init({
@@ -1680,7 +1770,7 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="nlk-landing-root">
+    <div className={`nlk-landing-root ${disclaimerOpen ? "nlk-disclaimer-open" : ""}`}>
       <Navbar />
       <Hero />
       <Stats />
@@ -1694,6 +1784,65 @@ export default function LandingPage() {
       <Footer />
       <WhatsAppButton />
       <ScrollTopButton />
+
+      {disclaimerOpen && (
+        <div className="nlk-disclaimer-modal" role="dialog" aria-modal="true" aria-labelledby="nlk-disclaimer-title">
+          <div className="nlk-disclaimer-card">
+            <h2 id="nlk-disclaimer-title" className="nlk-disclaimer-title">
+              Disclaimer
+            </h2>
+
+            <p>
+              The rules of the Bar Council of India prohibit law firms from
+              advertising and soliciting work through communication in the public
+              domain. The website is meant solely for the purpose of information
+              and not for the purpose of advertising. The user acknowledges the
+              following:
+            </p>
+
+            <ul>
+              <li>
+                The information about our Law Firm is provided to the user only
+                on his/her request and any information obtained or material
+                downloaded from this website is completely at the user's
+                volition and any transmission, receipt or use of this site would
+                not create any lawyer-client relationship.
+              </li>
+
+              <li>
+                The material on our website has been prepared and published for
+                general information only. There is neither any effort nor any
+                intention to solicit new clients or new engagement from existing
+                clients by way of this web site.
+              </li>
+
+              <li>
+                NLK Law Associates a Law Firm has committed to comply with all
+                the laws applicable and under no circumstances will NLK Law
+                Associates Law Firm undertake any engagement that violates any
+                law or conflicts with any ethical, statutory or other
+                requirements applicable for performance of professional legal
+                services.
+              </li>
+            </ul>
+
+            <p>
+              Even though NLK Law Associates Law Firm makes all efforts to
+              ensure that this website is free of viruses but does not guarantee
+              the same. NLK Law Associates Law Firm disclaims any liability or
+              responsibility it may hold if the site is not free of viruses.
+            </p>
+
+            <button
+              type="button"
+              className="nlk-btn nlk-btn-gold nlk-disclaimer-approve"
+              onClick={() => setDisclaimerOpen(false)}
+            >
+              Approve
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
