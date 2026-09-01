@@ -19,6 +19,7 @@ import TSRInitiation from "./pages/NonLitigation/BusinessLegal/TSRInitiation";
 import TSRDrafting from "./pages/NonLitigation/BusinessLegal/TSRDrafting";
 
 import MasterDB from "./pages/MasterDB";
+import Litigation from "./pages/Litigation/Litigation";
 import LandingPage from "./features/landing-page/LandingPage";
 
 
@@ -99,6 +100,9 @@ function App() {
 
           {/* /dashboard/masterDB */}
           <Route path="masterDB" element={<MasterDB />} />
+
+          {/* /dashboard/litigation */}
+          <Route path="litigation" element={<Litigation />} />
 
           {/* /dashboard/non-litigation/business-legal/tsr-initiation */}
           <Route

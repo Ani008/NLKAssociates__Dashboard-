@@ -12,6 +12,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
   const NAV = [
     { label: "Dashboard", icon: "⊞", path: "/dashboard" },
     { label: "All Cases", icon: "📁", path: "/dashboard/cases" },
+    { label: "Litigation", icon: "⚖️", path: "/dashboard/litigation" },
     {
       label: "Non-Litigation",
       icon: "🏛️",

@@ -11,6 +11,7 @@ const connectDB = require("./config/db");
 const tsrInitiationRoutes = require('./routes/tsrInitiationRoutes');
 const tsrDraftRoutes = require('./routes/tsrDraftRoutes');   // Draft generation
 const masterDBRoutes = require("./routes/masterDBRoutes");
+const litigationRoutes = require("./routes/litigationRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const path = require('path');
 const fs = require('fs');
@@ -46,6 +47,7 @@ app.use('/api/tsr-initiation', tsrInitiationRoutes);
 app.use('/api/tsr-draft', tsrDraftRoutes);         // Draft generation for TSR Drafting page
 
 app.use("/api/masterdb", masterDBRoutes);
+app.use("/api/litigation", litigationRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
 
