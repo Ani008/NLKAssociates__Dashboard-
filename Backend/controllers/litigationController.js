@@ -1,5 +1,17 @@
 const Litigation = require("../models/Litigation");
 
+// Keep only well-formed file entries coming from the client.
+const sanitizeBulkFiles = (files) =>
+  (Array.isArray(files) ? files : [])
+    .filter((f) => f && f.filePath)
+    .map((f) => ({
+      originalName: f.originalName || "",
+      filePath: f.filePath,
+      fileSize: Number(f.fileSize) || 0,
+      mimeType: f.mimeType || "",
+      ...(f.uploadedAt && { uploadedAt: f.uploadedAt }),
+    }));
+
 // ---------- CREATE ----------
 // POST /api/litigation
 exports.createLitigation = async (req, res) => {
@@ -13,6 +25,7 @@ exports.createLitigation = async (req, res) => {
       plaintiff,
       defendant,
       nextDate,
+      bulkFiles,
     } = req.body;
 
     if (!clientName || !clientName.trim()) {
@@ -32,6 +45,7 @@ exports.createLitigation = async (req, res) => {
       plaintiff: (plaintiff || "").trim(),
       defendant: (defendant || "").trim(),
       nextDate: nextDate ? new Date(nextDate) : null,
+      bulkFiles: sanitizeBulkFiles(bulkFiles),
     });
 
     console.log(`[Litigation] Created record ${record._id}`);
@@ -136,6 +150,7 @@ exports.updateLitigation = async (req, res) => {
       plaintiff,
       defendant,
       nextDate,
+      bulkFiles,
     } = req.body;
 
     const update = {
@@ -149,6 +164,7 @@ exports.updateLitigation = async (req, res) => {
       ...(nextDate !== undefined && {
         nextDate: nextDate ? new Date(nextDate) : null,
       }),
+      ...(bulkFiles !== undefined && { bulkFiles: sanitizeBulkFiles(bulkFiles) }),
     };
 
     const record = await Litigation.findByIdAndUpdate(req.params.id, update, {

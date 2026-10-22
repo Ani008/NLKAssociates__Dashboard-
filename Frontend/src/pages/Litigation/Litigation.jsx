@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import API from "../../api/axios";
+import BulkFileUpload from "../../components/BulkFileUpload";
 
 const EMPTY_FORM = {
   nlkFileNo: "",
@@ -39,6 +40,9 @@ export default function Litigation() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
+
+  const [bulkFiles, setBulkFiles] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState(null);
 
   const [viewRecord, setViewRecord] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
@@ -73,9 +77,51 @@ export default function Litigation() {
     fetchRecords(1, search);
   };
 
+  const authHeader = () => ({
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  });
+
+  // Drag & drop upload — hits the shared multer handler; files are only
+  // attached to the record when the form is saved.
+  const handleFilesSelected = async (fileList) => {
+    if (!fileList || fileList.length === 0) return;
+
+    const formData = new FormData();
+    fileList.forEach((file) => formData.append("files", file));
+
+    setUploadProgress({ percent: 0, status: "uploading" });
+
+    try {
+      const { data } = await API.post("/litigation/upload-bulk", formData, {
+        headers: { ...authHeader(), "Content-Type": "multipart/form-data" },
+        onUploadProgress: (e) => {
+          const percent = e.total ? Math.round((e.loaded * 100) / e.total) : 0;
+          setUploadProgress({ percent, status: "uploading" });
+        },
+      });
+
+      if (data.success) {
+        setBulkFiles((prev) => [...prev, ...data.files]);
+      }
+    } catch (error) {
+      console.error(error);
+      alert(error?.response?.data?.message || "File upload failed");
+    } finally {
+      setUploadProgress(null);
+    }
+  };
+
+  const handleRemoveFile = (index) => {
+    setBulkFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const fileUrl = (filePath) =>
+    filePath ? (filePath.startsWith("/") ? filePath : `/${filePath}`) : "#";
+
   const openAddForm = () => {
     setEditingId(null);
     setForm(EMPTY_FORM);
+    setBulkFiles([]);
     setShowForm(true);
   };
 
@@ -91,6 +137,7 @@ export default function Litigation() {
       defendant: row.defendant || "",
       nextDate: row.nextDate ? row.nextDate.slice(0, 10) : "",
     });
+    setBulkFiles(row.bulkFiles || []);
     setShowForm(true);
   };
 
@@ -98,6 +145,8 @@ export default function Litigation() {
     setShowForm(false);
     setEditingId(null);
     setForm(EMPTY_FORM);
+    setBulkFiles([]);
+    setUploadProgress(null);
   };
 
   const handleChange = (field) => (e) => {
@@ -112,14 +161,20 @@ export default function Litigation() {
       return;
     }
 
+    if (uploadProgress) {
+      alert("Please wait for the file upload to finish");
+      return;
+    }
+
     try {
       setSaving(true);
+      const payload = { ...form, bulkFiles };
 
       if (editingId) {
-        const { data } = await API.put(`/litigation/${editingId}`, form);
+        const { data } = await API.put(`/litigation/${editingId}`, payload);
         alert(data.message || "Record updated successfully");
       } else {
-        const { data } = await API.post("/litigation", form);
+        const { data } = await API.post("/litigation", payload);
         alert(data.message || "Record saved successfully");
       }
 
@@ -519,6 +574,13 @@ export default function Litigation() {
                 </Field>
               </div>
 
+              <BulkFileUpload
+                files={bulkFiles}
+                onFilesSelected={handleFilesSelected}
+                onRemoveFile={handleRemoveFile}
+                uploadProgress={uploadProgress}
+              />
+
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 22 }}>
                 <button type="button" onClick={closeForm} style={secondaryButtonStyle}>
                   Cancel
@@ -563,6 +625,48 @@ export default function Litigation() {
                   </div>
                 </div>
               ))}
+
+              <div style={{ paddingTop: 14 }}>
+                <div style={{ color: "#64748b", fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
+                  Uploaded Documents ({(viewRecord.bulkFiles || []).length})
+                </div>
+                {(viewRecord.bulkFiles || []).length === 0 ? (
+                  <div style={{ color: "#94a3b8", fontSize: 13 }}>No documents uploaded.</div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {viewRecord.bulkFiles.map((f, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 10,
+                          background: "#f8fafc",
+                          border: "1px solid #e2e8f0",
+                          borderRadius: 8,
+                          padding: "8px 12px",
+                        }}
+                      >
+                        <span
+                          title={f.originalName}
+                          style={{ fontSize: 13, color: "#0f172a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                        >
+                          📎 {f.originalName}
+                        </span>
+                        <span style={{ display: "flex", gap: 10, flexShrink: 0, fontSize: 12 }}>
+                          <a href={fileUrl(f.filePath)} target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb" }}>
+                            View
+                          </a>
+                          <a href={fileUrl(f.filePath)} download={f.originalName || ""} style={{ color: "#16a34a" }}>
+                            Download
+                          </a>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

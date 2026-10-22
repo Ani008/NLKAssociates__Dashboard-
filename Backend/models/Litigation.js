@@ -18,6 +18,20 @@ const LitigationSchema = new mongoose.Schema(
     // Stored as a real Date so it can be sorted/filtered ("upcoming hearings"
     // etc.). Frontend sends an ISO date string (yyyy-mm-dd) from <input type="date">.
     nextDate: { type: Date, default: null },
+
+    // ---------- Supporting documents (drag & drop) ----------
+    // Same shape as TSRInitiation.bulkFiles. Files are uploaded first via
+    // POST /api/litigation/upload-bulk, then the returned file info is sent
+    // back here on create/update.
+    bulkFiles: [
+      {
+        originalName: { type: String, default: "" },
+        filePath: { type: String, default: "" },
+        fileSize: { type: Number, default: 0 },
+        mimeType: { type: String, default: "" },
+        uploadedAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true }
 );
